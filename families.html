@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الأسر النازحة - منصة إدارة مراكز الإيواء</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .status-active { background: rgba(0,114,41,0.12); color: var(--green); }
+  .status-pending { background: rgba(201,162,39,0.15); color: #8a6d10; }
+  .status-relocated { background: rgba(27,79,114,0.12); color: var(--nile); }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ============ الشريط الجانبي ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-flag"><span></span><span></span><span></span></div>
+      <h2>منصة إدارة مراكز الإيواء</h2>
+      <p>جمهورية السودان</p>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="dashboard.html"><span class="icon">📊</span> لوحة التحكم</a></li>
+      <li><a href="shelters.html"><span class="icon">🏠</span> مراكز الإيواء</a></li>
+      <li><a href="families.html" class="active"><span class="icon">👨‍👩‍👧</span> الأسر النازحة</a></li>
+      <li><a href="needs.html"><span class="icon">📦</span> الاحتياجات</a></li>
+      <li><a href="aid.html"><span class="icon">🤝</span> المساعدات</a></li>
+      <li><a href="reports.html"><span class="icon">📈</span> التقارير</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">🚪 تسجيل خروج</button>
+    </div>
+  </aside>
+
+  <!-- ============ المحتوى الرئيسي ============ -->
+  <main class="main-content">
+
+    <div class="topbar">
+      <div style="display:flex; align-items:center;">
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        <h1>👨‍👩‍👧 الأسر النازحة</h1>
+      </div>
+      <div class="user-info">
+        <div class="user-avatar" id="avatar">م</div>
+        <div>
+          <div class="name" id="userName">مدير النظام</div>
+          <div class="role">مسؤول المنصة</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ملخص -->
+    <div class="stats-grid">
+      <div class="stat-card nile">
+        <div class="stat-icon">👨‍👩‍👧</div>
+        <div class="stat-value" id="totalFamilies">0</div>
+        <div class="stat-label">إجمالي الأسر</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value" id="totalPeople">0</div>
+        <div class="stat-label">إجمالي الأفراد</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-icon">👶</div>
+        <div class="stat-value" id="totalChildren">0</div>
+        <div class="stat-label">الأطفال</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">🏠</div>
+        <div class="stat-value" id="familiesWithShelter">0</div>
+        <div class="stat-label">في مراكز الإيواء</div>
+      </div>
+    </div>
+
+    <!-- الجدول -->
+    <div class="card">
+      <div class="card-header">
+        <h2>قائمة الأسر</h2>
+        <button class="btn btn-primary" onclick="openModal()">➕ تسجيل أسرة جديدة</button>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="🔍 ابحث بالاسم أو الرقم الوطني أو المركز..." oninput="renderFamilies()">
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>رب الأسرة</th>
+              <th>الرقم الوطني</th>
+              <th>الجنس</th>
+              <th>عدد الأفراد</th>
+              <th>أطفال</th>
+              <th>مركز الإيواء</th>
+              <th>الولاية الأصلية</th>
+              <th>الحالة</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="familiesTable">
+            <tr><td colspan="10" class="empty-state">
+              <div class="icon">📭</div>
+              لا توجد أسر مسجلة بعد. اضغط "تسجيل أسرة جديدة" للبدء.
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============ نافذة الإضافة/التعديل ============ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">➕ تسجيل أسرة جديدة</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <form id="familyForm" onsubmit="saveFamily(event)">
+      <div class="modal-body">
+        <input type="hidden" id="familyId">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>اسم رب الأسرة *</label>
+            <input type="text" id="head" required placeholder="الاسم الكامل">
+          </div>
+          <div class="form-group">
+            <label>الرقم الوطني</label>
+            <input type="text" id="nationalId" placeholder="اختياري">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>الجنس *</label>
+            <select id="gender" required>
+              <option value="">-- اختر --</option>
+              <option>ذكر</option>
+              <option>أنثى</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>رقم الهاتف</label>
+            <input type="tel" id="phone" placeholder="09xxxxxxxx">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>عدد أفراد الأسرة *</label>
+            <input type="number" id="count" required min="1" placeholder="مثال: 5">
+          </div>
+          <div class="form-group">
+            <label>عدد الأطفال (أقل من 18)</label>
+            <input type="number" id="children" min="0" value="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>الولاية الأصلية *</label>
+            <input type="text" id="origin" required placeholder="مثال: الخرطوم">
+          </div>
+          <div class="form-group">
+            <label>مركز الإيواء الحالي *</label>
+            <select id="shelter" required>
+              <option value="">-- اختر المركز --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>الحالة *</label>
+            <select id="status" required>
+              <option value="نشطة">نشطة</option>
+              <option value="قيد المراجعة">قيد المراجعة</option>
+              <option value="تم إعادة التوطين">تم إعادة التوطين</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>تاريخ التسجيل</label>
+            <input type="text" id="date" readonly>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>ملاحظات</label>
+          <textarea id="notes" rows="2" placeholder="احتياجات خاصة، حالة صحية، إلخ..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+        <button type="submit" class="btn btn-primary">💾 حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ==================== حماية ====================
+if (localStorage.getItem('sms_logged_in') !== 'true') {
+  window.location.href = 'index.html';
+}
+const user = localStorage.getItem('sms_user') || 'admin';
+document.getElementById('userName').textContent = user === 'admin' ? 'مدير النظام' : user;
+document.getElementById('avatar').textContent = user.charAt(0).toUpperCase();
+
+function logout() {
+  if (confirm('هل تريد تسجيل الخروج؟')) {
+    localStorage.removeItem('sms_logged_in');
+    localStorage.removeItem('sms_user');
+    window.location.href = 'index.html';
+  }
+}
+function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+
+// ==================== البيانات ====================
+function getFamilies() {
+  try { return JSON.parse(localStorage.getItem('sms_families')) || []; }
+  catch(e) { return []; }
+}
+function saveFamilies(list) {
+  localStorage.setItem('sms_families', JSON.stringify(list));
+}
+function getShelters() {
+  try { return JSON.parse(localStorage.getItem('sms_shelters')) || []; }
+  catch(e) { return []; }
+}
+
+let families = getFamilies();
+const shelters = getShelters();
+
+// ==================== تعبئة قائمة المراكز ====================
+function fillShelterOptions(selected) {
+  const sel = document.getElementById('shelter');
+  sel.innerHTML = '<option value="">-- اختر المركز --</option>' +
+    shelters.map(s => `<option value="${s.name}" ${s.name===selected?'selected':''}>${s.name} (${s.state||''})</option>`).join('');
+}
+
+// ==================== العرض ====================
+function renderFamilies() {
+  const tbody = document.getElementById('familiesTable');
+  const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+
+  let filtered = families;
+  if (q) {
+    filtered = families.filter(f =>
+      (f.head||'').toLowerCase().includes(q) ||
+      (f.nationalId||'').toLowerCase().includes(q) ||
+      (f.shelter||'').toLowerCase().includes(q) ||
+      (f.origin||'').toLowerCase().includes(q)
+    );
+  }
+
+  // الإحصائيات
+  const totalPeople   = families.reduce((a,f) => a + (parseInt(f.count)||0), 0);
+  const totalChildren = families.reduce((a,f) => a + (parseInt(f.children)||0), 0);
+  const withShelter   = families.filter(f => f.shelter).length;
+
+  document.getElementById('totalFamilies').textContent     = families.length;
+  document.getElementById('totalPeople').textContent       = totalPeople;
+  document.getElementById('totalChildren').textContent     = totalChildren;
+  document.getElementById('familiesWithShelter').textContent = withShelter;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-state">
+      <div class="icon">📭</div>
+      ${q ? 'لا توجد نتائج مطابقة للبحث' : 'لا توجد أسر مسجلة بعد'}
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((f, i) => {
+    const statusCls = f.status === 'نشطة' ? 'status-active' :
+                      f.status === 'قيد المراجعة' ? 'status-pending' : 'status-relocated';
+    return `
+      <tr>
+        <td>${i+1}</td>
+        <td><b>${f.head||'—'}</b></td>
+        <td>${f.nationalId || '—'}</td>
+        <td>${f.gender||'—'}</td>
+        <td><b>${f.count||0}</b></td>
+        <td>${f.children||0}</td>
+        <td>${f.shelter||'—'}</td>
+        <td>${f.origin||'—'}</td>
+        <td><span class="status-pill ${statusCls}">${f.status||'—'}</span></td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="editFamily(${families.indexOf(f)})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteFamily(${families.indexOf(f)})">🗑️</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ==================== Modal ====================
+function openModal(edit = false) {
+  document.getElementById('modalOverlay').classList.add('active');
+  if (!edit) {
+    document.getElementById('modalTitle').textContent = '➕ تسجيل أسرة جديدة';
+    document.getElementById('familyForm').reset();
+    document.getElementById('familyId').value = '';
+    document.getElementById('date').value = new Date().toLocaleDateString('ar-EG');
+    fillShelterOptions();
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function editFamily(index) {
+  const f = families[index];
+  if (!f) return;
+  openModal(true);
+  document.getElementById('modalTitle').textContent = '✏️ تعديل بيانات الأسرة';
+  document.getElementById('familyId').value   = index;
+  document.getElementById('head').value       = f.head || '';
+  document.getElementById('nationalId').value = f.nationalId || '';
+  document.getElementById('gender').value     = f.gender || '';
+  document.getElementById('phone').value      = f.phone || '';
+  document.getElementById('count').value      = f.count || '';
+  document.getElementById('children').value   = f.children || 0;
+  document.getElementById('origin').value     = f.origin || '';
+  document.getElementById('status').value     = f.status || 'نشطة';
+  document.getElementById('date').value       = f.date || '';
+  document.getElementById('notes').value      = f.notes || '';
+  fillShelterOptions(f.shelter);
+}
+
+function saveFamily(e) {
+  e.preventDefault();
+  const id = document.getElementById('familyId').value;
+
+  const data = {
+    head:       document.getElementById('head').value.trim(),
+    nationalId: document.getElementById('nationalId').value.trim(),
+    gender:     document.getElementById('gender').value,
+    phone:      document.getElementById('phone').value.trim(),
+    count:      parseInt(document.getElementById('count').value) || 0,
+    children:   parseInt(document.getElementById('children').value) || 0,
+    origin:     document.getElementById('origin').value.trim(),
+    shelter:    document.getElementById('shelter').value,
+    status:     document.getElementById('status').value,
+    date:       document.getElementById('date').value || new Date().toLocaleDateString('ar-EG'),
+    notes:      document.getElementById('notes').value.trim()
+  };
+
+  if (id === '') {
+    families.push(data);
+  } else {
+    families[parseInt(id)] = data;
+  }
+
+  saveFamilies(families);
+  closeModal();
+  renderFamilies();
+}
+
+function deleteFamily(index) {
+  if (!confirm('هل أنت متأكد من حذف هذه الأسرة؟')) return;
+  families.splice(index, 1);
+  saveFamilies(families);
+  renderFamilies();
+}
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ==================== تشغيل ====================
+renderFamilies();
+</script>
+</body>
+</html>
