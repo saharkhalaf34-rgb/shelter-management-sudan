@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المساعدات الإنسانية - منصة إدارة مراكز الإيواء</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  .org-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(27,79,114,0.12);
+    color: var(--nile);
+  }
+  .status-aid {
+    display: inline-flex;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .status-planned { background: rgba(107,107,107,0.15); color: #555; }
+  .status-ongoing { background: rgba(201,162,39,0.15); color: #8a6d10; }
+  .status-done { background: rgba(0,114,41,0.12); color: var(--green); }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ============ الشريط الجانبي ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-flag"><span></span><span></span><span></span></div>
+      <h2>منصة إدارة مراكز الإيواء</h2>
+      <p>جمهورية السودان</p>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="dashboard.html"><span class="icon">📊</span> لوحة التحكم</a></li>
+      <li><a href="shelters.html"><span class="icon">🏠</span> مراكز الإيواء</a></li>
+      <li><a href="families.html"><span class="icon">👨‍👩‍👧</span> الأسر النازحة</a></li>
+      <li><a href="needs.html"><span class="icon">📦</span> الاحتياجات</a></li>
+      <li><a href="aid.html" class="active"><span class="icon">🤝</span> المساعدات</a></li>
+      <li><a href="reports.html"><span class="icon">📈</span> التقارير</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">🚪 تسجيل خروج</button>
+    </div>
+  </aside>
+
+  <!-- ============ المحتوى الرئيسي ============ -->
+  <main class="main-content">
+
+    <div class="topbar">
+      <div style="display:flex; align-items:center;">
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        <h1>🤝 المساعدات الإنسانية</h1>
+      </div>
+      <div class="user-info">
+        <div class="user-avatar" id="avatar">م</div>
+        <div>
+          <div class="name" id="userName">مدير النظام</div>
+          <div class="role">مسؤول المنصة</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ملخص -->
+    <div class="stats-grid">
+      <div class="stat-card nile">
+        <div class="stat-icon">🤝</div>
+        <div class="stat-value" id="totalAid">0</div>
+        <div class="stat-label">إجمالي المساعدات</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-icon">🏢</div>
+        <div class="stat-value" id="totalOrgs">0</div>
+        <div class="stat-label">المنظمات</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-value" id="ongoingAid">0</div>
+        <div class="stat-label">قيد التنفيذ</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="doneAid">0</div>
+        <div class="stat-label">تم التوزيع</div>
+      </div>
+    </div>
+
+    <!-- الجدول -->
+    <div class="card">
+      <div class="card-header">
+        <h2>سجل المساعدات</h2>
+        <button class="btn btn-primary" onclick="openModal()">➕ إضافة مساعدة</button>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="🔍 ابحث بالمنظمة أو النوع أو المركز..." oninput="renderAid()">
+        <select id="filterStatus" onchange="renderAid()" style="padding:11px 16px;border:2px solid var(--sand-2);border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;background:var(--white);">
+          <option value="">كل الحالات</option>
+          <option value="مخططة">مخططة</option>
+          <option value="قيد التنفيذ">قيد التنفيذ</option>
+          <option value="تم التوزيع">تم التوزيع</option>
+        </select>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>المنظمة</th>
+              <th>نوع المساعدة</th>
+              <th>مركز الإيواء</th>
+              <th>عدد المستفيدين</th>
+              <th>الكمية</th>
+              <th>تاريخ التوزيع</th>
+              <th>الحالة</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="aidTable">
+            <tr><td colspan="9" class="empty-state">
+              <div class="icon">📭</div>
+              لا توجد مساعدات مسجلة بعد. اضغط "إضافة مساعدة" للبدء.
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============ نافذة الإضافة/التعديل ============ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">➕ إضافة مساعدة جديدة</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <form id="aidForm" onsubmit="saveAid(event)">
+      <div class="modal-body">
+        <input type="hidden" id="aidId">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>المنظمة المانحة *</label>
+            <select id="org" required>
+              <option value="">-- اختر المنظمة --</option>
+              <option>الهلال الأحمر السوداني</option>
+              <option>UNHCR - المفوضية السامية</option>
+              <option>WFP - برنامج الغذاء العالمي</option>
+              <option>UNICEF - اليونيسف</option>
+              <option>WHO - منظمة الصحة العالمية</option>
+              <option>OCHA - مكتب تنسيق الشؤون الإنسانية</option>
+              <option>Islamic Relief</option>
+              <option>Save the Children</option>
+              <option>OXFAM</option>
+              <option>منظمة محلية</option>
+              <option>أخرى</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>نوع المساعدة *</label>
+            <select id="type" required>
+              <option value="">-- اختر النوع --</option>
+              <option>🍞 سلة غذائية</option>
+              <option>💧 مياه صالحة للشرب</option>
+              <option>💊 أدوية ومستلزمات طبية</option>
+              <option>🧥 ملابس وبطانيات</option>
+              <option>🏠 مواد إيواء وخيام</option>
+              <option>🧼 مستلزمات نظافة</option>
+              <option>💵 مساعدات نقدية</option>
+              <option>📚 مواد تعليمية</option>
+              <option>🔧 أخرى</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>مركز الإيواء *</label>
+          <select id="shelter" required>
+            <option value="">-- اختر المركز --</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>عدد المستفيدين *</label>
+            <input type="number" id="beneficiaries" required min="1" placeholder="مثال: 100">
+          </div>
+          <div class="form-group">
+            <label>الكمية *</label>
+            <input type="text" id="quantity" required placeholder="مثال: 100 كرتونة">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>تاريخ التوزيع *</label>
+            <input type="date" id="date" required>
+          </div>
+          <div class="form-group">
+            <label>الحالة *</label>
+            <select id="status" required>
+              <option value="مخططة">مخططة</option>
+              <option value="قيد التنفيذ">قيد التنفيذ</option>
+              <option value="تم التوزيع">تم التوزيع</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>ملاحظات</label>
+          <textarea id="notes" rows="2" placeholder="تفاصيل إضافية..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+        <button type="submit" class="btn btn-primary">💾 حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ==================== حماية ====================
+if (localStorage.getItem('sms_logged_in') !== 'true') {
+  window.location.href = 'index.html';
+}
+const user = localStorage.getItem('sms_user') || 'admin';
+document.getElementById('userName').textContent = user === 'admin' ? 'مدير النظام' : user;
+document.getElementById('avatar').textContent = user.charAt(0).toUpperCase();
+
+function logout() {
+  if (confirm('هل تريد تسجيل الخروج؟')) {
+    localStorage.removeItem('sms_logged_in');
+    localStorage.removeItem('sms_user');
+    window.location.href = 'index.html';
+  }
+}
+function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+
+// ==================== البيانات ====================
+function getAid() {
+  try { return JSON.parse(localStorage.getItem('sms_aid')) || []; }
+  catch(e) { return []; }
+}
+function saveAidList(list) {
+  localStorage.setItem('sms_aid', JSON.stringify(list));
+}
+function getShelters() {
+  try { return JSON.parse(localStorage.getItem('sms_shelters')) || []; }
+  catch(e) { return []; }
+}
+
+let aidList = getAid();
+const shelters = getShelters();
+
+// ==================== تعبئة قائمة المراكز ====================
+function fillShelterOptions(selected) {
+  const sel = document.getElementById('shelter');
+  sel.innerHTML = '<option value="">-- اختر المركز --</option>' +
+    shelters.map(s => `<option value="${s.name}" ${s.name===selected?'selected':''}>${s.name} (${s.state||''})</option>`).join('');
+}
+
+// ==================== العرض ====================
+function renderAid() {
+  const tbody = document.getElementById('aidTable');
+  const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  const sFilter = document.getElementById('filterStatus').value;
+
+  let filtered = aidList;
+  if (q) {
+    filtered = filtered.filter(a =>
+      (a.org||'').toLowerCase().includes(q) ||
+      (a.type||'').toLowerCase().includes(q) ||
+      (a.shelter||'').toLowerCase().includes(q)
+    );
+  }
+  if (sFilter) filtered = filtered.filter(a => a.status === sFilter);
+
+  // الإحصائيات
+  document.getElementById('totalAid').textContent  = aidList.length;
+  document.getElementById('totalOrgs').textContent = new Set(aidList.map(a => a.org)).size;
+  document.getElementById('ongoingAid').textContent = aidList.filter(a => a.status === 'قيد التنفيذ').length;
+  document.getElementById('doneAid').textContent    = aidList.filter(a => a.status === 'تم التوزيع').length;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">
+      <div class="icon">📭</div>
+      ${q || sFilter ? 'لا توجد نتائج مطابقة' : 'لا توجد مساعدات مسجلة بعد'}
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((a, i) => {
+    const sCls = a.status === 'تم التوزيع' ? 'status-done' :
+                 a.status === 'قيد التنفيذ' ? 'status-ongoing' : 'status-planned';
+    return `
+      <tr>
+        <td>${i+1}</td>
+        <td><span class="org-badge">🏢 ${a.org||'—'}</span></td>
+        <td><b>${a.type||'—'}</b></td>
+        <td>${a.shelter||'—'}</td>
+        <td><b>${a.beneficiaries||0}</b> مستفيد</td>
+        <td>${a.quantity||'—'}</td>
+        <td>${a.date||'—'}</td>
+        <td><span class="status-aid ${sCls}">${a.status||'—'}</span></td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="editAid(${aidList.indexOf(a)})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteAid(${aidList.indexOf(a)})">🗑️</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ==================== Modal ====================
+function openModal(edit = false) {
+  document.getElementById('modalOverlay').classList.add('active');
+  if (!edit) {
+    document.getElementById('modalTitle').textContent = '➕ إضافة مساعدة جديدة';
+    document.getElementById('aidForm').reset();
+    document.getElementById('aidId').value = '';
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    fillShelterOptions();
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function editAid(index) {
+  const a = aidList[index];
+  if (!a) return;
+  openModal(true);
+  document.getElementById('modalTitle').textContent = '✏️ تعديل المساعدة';
+  document.getElementById('aidId').value         = index;
+  document.getElementById('org').value           = a.org || '';
+  document.getElementById('type').value          = a.type || '';
+  document.getElementById('beneficiaries').value = a.beneficiaries || '';
+  document.getElementById('quantity').value      = a.quantity || '';
+  document.getElementById('date').value          = a.date || '';
+  document.getElementById('status').value        = a.status || 'مخططة';
+  document.getElementById('notes').value         = a.notes || '';
+  fillShelterOptions(a.shelter);
+}
+
+function saveAid(e) {
+  e.preventDefault();
+  const id = document.getElementById('aidId').value;
+
+  const data = {
+    org:           document.getElementById('org').value,
+    type:          document.getElementById('type').value,
+    shelter:       document.getElementById('shelter').value,
+    beneficiaries: parseInt(document.getElementById('beneficiaries').value) || 0,
+    quantity:      document.getElementById('quantity').value.trim(),
+    date:          document.getElementById('date').value,
+    status:        document.getElementById('status').value,
+    notes:         document.getElementById('notes').value.trim()
+  };
+
+  if (id === '') {
+    aidList.push(data);
+  } else {
+    aidList[parseInt(id)] = data;
+  }
+
+  saveAidList(aidList);
+  closeModal();
+  renderAid();
+}
+
+function deleteAid(index) {
+  if (!confirm('هل أنت متأكد من حذف هذه المساعدة؟')) return;
+  aidList.splice(index, 1);
+  saveAidList(aidList);
+  renderAid();
+}
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ==================== تشغيل ====================
+renderAid();
+</script>
+</body>
+</html>
