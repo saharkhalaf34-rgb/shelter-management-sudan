@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مراكز الإيواء - منصة إدارة مراكز الإيواء</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  .capacity-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--sand-2);
+    border-radius: 50px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .capacity-fill {
+    height: 100%;
+    border-radius: 50px;
+    transition: width 0.5s;
+  }
+  .capacity-fill.ok { background: var(--green); }
+  .capacity-fill.warn { background: var(--gold); }
+  .capacity-fill.full { background: var(--red); }
+  .capacity-text {
+    font-size: 12px;
+    color: var(--gray);
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ============ الشريط الجانبي ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-flag"><span></span><span></span><span></span></div>
+      <h2>منصة إدارة مراكز الإيواء</h2>
+      <p>جمهورية السودان</p>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="dashboard.html"><span class="icon">📊</span> لوحة التحكم</a></li>
+      <li><a href="shelters.html" class="active"><span class="icon">🏠</span> مراكز الإيواء</a></li>
+      <li><a href="families.html"><span class="icon">👨‍👩‍👧</span> الأسر النازحة</a></li>
+      <li><a href="needs.html"><span class="icon">📦</span> الاحتياجات</a></li>
+      <li><a href="aid.html"><span class="icon">🤝</span> المساعدات</a></li>
+      <li><a href="reports.html"><span class="icon">📈</span> التقارير</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">🚪 تسجيل خروج</button>
+    </div>
+  </aside>
+
+  <!-- ============ المحتوى الرئيسي ============ -->
+  <main class="main-content">
+
+    <div class="topbar">
+      <div style="display:flex; align-items:center;">
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        <h1>🏠 مراكز الإيواء</h1>
+      </div>
+      <div class="user-info">
+        <div class="user-avatar" id="avatar">م</div>
+        <div>
+          <div class="name" id="userName">مدير النظام</div>
+          <div class="role">مسؤول المنصة</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ملخص سريع -->
+    <div class="stats-grid">
+      <div class="stat-card nile">
+        <div class="stat-icon">🏠</div>
+        <div class="stat-value" id="totalShelters">0</div>
+        <div class="stat-label">إجمالي المراكز</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value" id="totalCapacity">0</div>
+        <div class="stat-label">السعة الإجمالية</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-icon">🛏️</div>
+        <div class="stat-value" id="totalOccupied">0</div>
+        <div class="stat-label">الإشغال الحالي</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">📉</div>
+        <div class="stat-value" id="totalAvailable">0</div>
+        <div class="stat-label">الأماكن المتاحة</div>
+      </div>
+    </div>
+
+    <!-- الجدول -->
+    <div class="card">
+      <div class="card-header">
+        <h2>قائمة المراكز</h2>
+        <button class="btn btn-primary" onclick="openModal()">➕ إضافة مركز جديد</button>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="🔍 ابحث باسم المركز أو الولاية..." oninput="renderShelters()">
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>اسم المركز</th>
+              <th>الولاية</th>
+              <th>المدينة</th>
+              <th>المسؤول</th>
+              <th>السعة</th>
+              <th>الإشغال</th>
+              <th>الحالة</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="sheltersTable">
+            <tr><td colspan="9" class="empty-state">
+              <div class="icon">📭</div>
+              لا توجد مراكز مسجلة بعد. اضغط "إضافة مركز جديد" للبدء.
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============ نافذة إضافة/تعديل ============ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">➕ إضافة مركز جديد</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <form id="shelterForm" onsubmit="saveShelter(event)">
+      <div class="modal-body">
+        <input type="hidden" id="shelterId">
+
+        <div class="form-group">
+          <label>اسم المركز *</label>
+          <input type="text" id="name" required placeholder="مثال: مركز إيواء الخرطوم">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>الولاية *</label>
+            <select id="state" required>
+              <option value="">-- اختر الولاية --</option>
+              <option>الخرطوم</option>
+              <option>الجزيرة</option>
+              <option>النيل الأزرق</option>
+              <option>النيل الأبيض</option>
+              <option>شمال كردفان</option>
+              <option>جنوب كردفان</option>
+              <option>غرب كردفان</option>
+              <option>شمال دارفور</option>
+              <option>جنوب دارفور</option>
+              <option>غرب دارفور</option>
+              <option>شرق دارفور</option>
+              <option>وسط دارفور</option>
+              <option>كسلا</option>
+              <option>البحر الأحمر</option>
+              <option>نهر النيل</option>
+              <option>الشمالية</option>
+              <option>سنار</option>
+              <option>غرب دارفور</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>المدينة / المحلية *</label>
+            <input type="text" id="city" required placeholder="مثال: أم درمان">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>اسم المسؤول *</label>
+            <input type="text" id="manager" required placeholder="الاسم الكامل">
+          </div>
+
+          <div class="form-group">
+            <label>رقم التواصل</label>
+            <input type="tel" id="phone" placeholder="09xxxxxxxx">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>السعة الإجمالية (أفراد) *</label>
+            <input type="number" id="capacity" required min="1" placeholder="مثال: 500">
+          </div>
+
+          <div class="form-group">
+            <label>عدد المشغول حالياً</label>
+            <input type="number" id="occupied" min="0" value="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>ملاحظات</label>
+          <textarea id="notes" rows="2" placeholder="أي معلومات إضافية..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+        <button type="submit" class="btn btn-primary">💾 حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ==================== حماية ====================
+if (localStorage.getItem('sms_logged_in') !== 'true') {
+  window.location.href = 'index.html';
+}
+
+const user = localStorage.getItem('sms_user') || 'admin';
+document.getElementById('userName').textContent = user === 'admin' ? 'مدير النظام' : user;
+document.getElementById('avatar').textContent = user.charAt(0).toUpperCase();
+
+function logout() {
+  if (confirm('هل تريد تسجيل الخروج؟')) {
+    localStorage.removeItem('sms_logged_in');
+    localStorage.removeItem('sms_user');
+    window.location.href = 'index.html';
+  }
+}
+function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+
+// ==================== البيانات ====================
+function getShelters() {
+  try { return JSON.parse(localStorage.getItem('sms_shelters')) || []; }
+  catch(e) { return []; }
+}
+function saveShelters(list) {
+  localStorage.setItem('sms_shelters', JSON.stringify(list));
+}
+
+let shelters = getShelters();
+
+// ==================== العرض ====================
+function renderShelters() {
+  const tbody = document.getElementById('sheltersTable');
+  const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+
+  let filtered = shelters;
+  if (q) {
+    filtered = shelters.filter(s =>
+      (s.name||'').toLowerCase().includes(q) ||
+      (s.state||'').toLowerCase().includes(q) ||
+      (s.city||'').toLowerCase().includes(q)
+    );
+  }
+
+  // الإحصائيات
+  const totalCap = shelters.reduce((a,s) => a + (parseInt(s.capacity)||0), 0);
+  const totalOcc = shelters.reduce((a,s) => a + (parseInt(s.occupied)||0), 0);
+  document.getElementById('totalShelters').textContent  = shelters.length;
+  document.getElementById('totalCapacity').textContent  = totalCap;
+  document.getElementById('totalOccupied').textContent  = totalOcc;
+  document.getElementById('totalAvailable').textContent = Math.max(totalCap - totalOcc, 0);
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">
+      <div class="icon">📭</div>
+      ${q ? 'لا توجد نتائج مطابقة للبحث' : 'لا توجد مراكز مسجلة بعد'}
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((s, i) => {
+    const cap = parseInt(s.capacity) || 0;
+    const occ = parseInt(s.occupied) || 0;
+    const pct = cap ? Math.min(Math.round((occ/cap)*100), 100) : 0;
+    const cls = pct > 85 ? 'full' : pct > 60 ? 'warn' : 'ok';
+    const badge = pct > 85 ? 'badge-red' : pct > 60 ? 'badge-gold' : 'badge-green';
+    const status = pct > 85 ? 'ممتلئ' : pct > 60 ? 'شبه ممتلئ' : 'متاح';
+
+    return `
+      <tr>
+        <td>${i+1}</td>
+        <td><b>${s.name||'—'}</b></td>
+        <td>${s.state||'—'}</td>
+        <td>${s.city||'—'}</td>
+        <td>${s.manager||'—'}</td>
+        <td>${cap}</td>
+        <td>
+          <b>${occ}</b> / ${cap}
+          <div class="capacity-bar"><div class="capacity-fill ${cls}" style="width:${pct}%"></div></div>
+          <div class="capacity-text">${pct}% مشغول</div>
+        </td>
+        <td><span class="badge ${badge}">${status}</span></td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="editShelter(${shelters.indexOf(s)})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteShelter(${shelters.indexOf(s)})">🗑️</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ==================== نافذة الإضافة/التعديل ====================
+function openModal(edit = false) {
+  document.getElementById('modalOverlay').classList.add('active');
+  if (!edit) {
+    document.getElementById('modalTitle').textContent = '➕ إضافة مركز جديد';
+    document.getElementById('shelterForm').reset();
+    document.getElementById('shelterId').value = '';
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function editShelter(index) {
+  const s = shelters[index];
+  if (!s) return;
+  openModal(true);
+  document.getElementById('modalTitle').textContent = '✏️ تعديل بيانات المركز';
+  document.getElementById('shelterId').value  = index;
+  document.getElementById('name').value       = s.name || '';
+  document.getElementById('state').value      = s.state || '';
+  document.getElementById('city').value       = s.city || '';
+  document.getElementById('manager').value    = s.manager || '';
+  document.getElementById('phone').value      = s.phone || '';
+  document.getElementById('capacity').value   = s.capacity || '';
+  document.getElementById('occupied').value   = s.occupied || 0;
+  document.getElementById('notes').value      = s.notes || '';
+}
+
+function saveShelter(e) {
+  e.preventDefault();
+  const id = document.getElementById('shelterId').value;
+
+  const data = {
+    name:     document.getElementById('name').value.trim(),
+    state:    document.getElementById('state').value,
+    city:     document.getElementById('city').value.trim(),
+    manager:  document.getElementById('manager').value.trim(),
+    phone:    document.getElementById('phone').value.trim(),
+    capacity: parseInt(document.getElementById('capacity').value) || 0,
+    occupied: parseInt(document.getElementById('occupied').value) || 0,
+    notes:    document.getElementById('notes').value.trim(),
+    date:     new Date().toLocaleDateString('ar-EG')
+  };
+
+  if (id === '') {
+    shelters.push(data);
+  } else {
+    shelters[parseInt(id)] = data;
+  }
+
+  saveShelters(shelters);
+  closeModal();
+  renderShelters();
+}
+
+function deleteShelter(index) {
+  if (!confirm('هل أنت متأكد من حذف هذا المركز؟')) return;
+  shelters.splice(index, 1);
+  saveShelters(shelters);
+  renderShelters();
+}
+
+// ==================== إغلاق عند الضغط على الخلفية ====================
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ==================== تشغيل ====================
+renderShelters();
+</script>
+</body>
+          </html>
