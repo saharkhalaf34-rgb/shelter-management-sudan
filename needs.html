@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الاحتياجات الأساسية - منصة إدارة مراكز الإيواء</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  .priority-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .priority-high { background: rgba(210,16,52,0.12); color: var(--red); }
+  .priority-medium { background: rgba(201,162,39,0.15); color: #8a6d10; }
+  .priority-low { background: rgba(0,114,41,0.12); color: var(--green); }
+
+  .category-icon {
+    display: inline-block;
+    font-size: 18px;
+    margin-left: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ============ الشريط الجانبي ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-flag"><span></span><span></span><span></span></div>
+      <h2>منصة إدارة مراكز الإيواء</h2>
+      <p>جمهورية السودان</p>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="dashboard.html"><span class="icon">📊</span> لوحة التحكم</a></li>
+      <li><a href="shelters.html"><span class="icon">🏠</span> مراكز الإيواء</a></li>
+      <li><a href="families.html"><span class="icon">👨‍👩‍👧</span> الأسر النازحة</a></li>
+      <li><a href="needs.html" class="active"><span class="icon">📦</span> الاحتياجات</a></li>
+      <li><a href="aid.html"><span class="icon">🤝</span> المساعدات</a></li>
+      <li><a href="reports.html"><span class="icon">📈</span> التقارير</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">🚪 تسجيل خروج</button>
+    </div>
+  </aside>
+
+  <!-- ============ المحتوى الرئيسي ============ -->
+  <main class="main-content">
+
+    <div class="topbar">
+      <div style="display:flex; align-items:center;">
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        <h1>📦 الاحتياجات الأساسية</h1>
+      </div>
+      <div class="user-info">
+        <div class="user-avatar" id="avatar">م</div>
+        <div>
+          <div class="name" id="userName">مدير النظام</div>
+          <div class="role">مسؤول المنصة</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ملخص -->
+    <div class="stats-grid">
+      <div class="stat-card nile">
+        <div class="stat-icon">📦</div>
+        <div class="stat-value" id="totalNeeds">0</div>
+        <div class="stat-label">إجمالي الاحتياجات</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">🔴</div>
+        <div class="stat-value" id="highPriority">0</div>
+        <div class="stat-label">أولوية عالية</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-icon">🟡</div>
+        <div class="stat-value" id="mediumPriority">0</div>
+        <div class="stat-label">أولوية متوسطة</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="fulfilled">0</div>
+        <div class="stat-label">تم تلبيتها</div>
+      </div>
+    </div>
+
+    <!-- الجدول -->
+    <div class="card">
+      <div class="card-header">
+        <h2>سجل الاحتياجات</h2>
+        <button class="btn btn-primary" onclick="openModal()">➕ إضافة احتياج</button>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="🔍 ابحث بالنوع أو المركز أو الأسرة..." oninput="renderNeeds()">
+        <select id="filterPriority" onchange="renderNeeds()" style="padding:11px 16px;border:2px solid var(--sand-2);border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;background:var(--white);">
+          <option value="">كل الأولويات</option>
+          <option value="عالية">عالية</option>
+          <option value="متوسطة">متوسطة</option>
+          <option value="منخفضة">منخفضة</option>
+        </select>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>نوع الاحتياج</th>
+              <th>الأسرة</th>
+              <th>مركز الإيواء</th>
+              <th>الكمية المطلوبة</th>
+              <th>الأولوية</th>
+              <th>الحالة</th>
+              <th>تاريخ التسجيل</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="needsTable">
+            <tr><td colspan="9" class="empty-state">
+              <div class="icon">📭</div>
+              لا توجد احتياجات مسجلة بعد. اضغط "إضافة احتياج" للبدء.
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============ نافذة الإضافة/التعديل ============ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">➕ إضافة احتياج جديد</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <form id="needForm" onsubmit="saveNeed(event)">
+      <div class="modal-body">
+        <input type="hidden" id="needId">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>نوع الاحتياج *</label>
+            <select id="type" required>
+              <option value="">-- اختر النوع --</option>
+              <option>🍞 غذاء</option>
+              <option>💧 مياه</option>
+              <option>💊 أدوية</option>
+              <option>🧥 ملابس</option>
+              <option>🛏️ فرش ومفروشات</option>
+              <option>🧼 مستلزمات نظافة</option>
+              <option>🏠 مواد إيواء</option>
+              <option>📚 مواد تعليمية</option>
+              <option>👶 مستلزمات أطفال</option>
+              <option>🩺 رعاية صحية</option>
+              <option>🔧 أخرى</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>الأولوية *</label>
+            <select id="priority" required>
+              <option value="">-- اختر --</option>
+              <option>عالية</option>
+              <option>متوسطة</option>
+              <option>منخفضة</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>الأسرة (اختياري)</label>
+            <select id="family">
+              <option value="">-- بدون أسرة محددة --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>مركز الإيواء *</label>
+            <select id="shelter" required>
+              <option value="">-- اختر المركز --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>الكمية المطلوبة *</label>
+            <input type="text" id="quantity" required placeholder="مثال: 50 كرتونة">
+          </div>
+          <div class="form-group">
+            <label>الحالة *</label>
+            <select id="status" required>
+              <option value="قيد الانتظار">قيد الانتظار</option>
+              <option value="قيد التنفيذ">قيد التنفيذ</option>
+              <option value="تم التلبية">تم التلبية</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>ملاحظات</label>
+          <textarea id="notes" rows="2" placeholder="تفاصيل إضافية..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+        <button type="submit" class="btn btn-primary">💾 حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ==================== حماية ====================
+if (localStorage.getItem('sms_logged_in') !== 'true') {
+  window.location.href = 'index.html';
+}
+const user = localStorage.getItem('sms_user') || 'admin';
+document.getElementById('userName').textContent = user === 'admin' ? 'مدير النظام' : user;
+document.getElementById('avatar').textContent = user.charAt(0).toUpperCase();
+
+function logout() {
+  if (confirm('هل تريد تسجيل الخروج؟')) {
+    localStorage.removeItem('sms_logged_in');
+    localStorage.removeItem('sms_user');
+    window.location.href = 'index.html';
+  }
+}
+function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+
+// ==================== البيانات ====================
+function getNeeds() {
+  try { return JSON.parse(localStorage.getItem('sms_needs')) || []; }
+  catch(e) { return []; }
+}
+function saveNeeds(list) {
+  localStorage.setItem('sms_needs', JSON.stringify(list));
+}
+function getShelters() {
+  try { return JSON.parse(localStorage.getItem('sms_shelters')) || []; }
+  catch(e) { return []; }
+}
+function getFamilies() {
+  try { return JSON.parse(localStorage.getItem('sms_families')) || []; }
+  catch(e) { return []; }
+}
+
+let needs = getNeeds();
+const shelters = getShelters();
+const families = getFamilies();
+
+// ==================== تعبئة القوائم ====================
+function fillShelterOptions(selected) {
+  const sel = document.getElementById('shelter');
+  sel.innerHTML = '<option value="">-- اختر المركز --</option>' +
+    shelters.map(s => `<option value="${s.name}" ${s.name===selected?'selected':''}>${s.name}</option>`).join('');
+}
+function fillFamilyOptions(selected) {
+  const sel = document.getElementById('family');
+  sel.innerHTML = '<option value="">-- بدون أسرة محددة --</option>' +
+    families.map(f => `<option value="${f.head}" ${f.head===selected?'selected':''}>${f.head} (${f.count||0} أفراد)</option>`).join('');
+}
+
+// ==================== العرض ====================
+function renderNeeds() {
+  const tbody = document.getElementById('needsTable');
+  const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  const pFilter = document.getElementById('filterPriority').value;
+
+  let filtered = needs;
+  if (q) {
+    filtered = filtered.filter(n =>
+      (n.type||'').toLowerCase().includes(q) ||
+      (n.shelter||'').toLowerCase().includes(q) ||
+      (n.family||'').toLowerCase().includes(q)
+    );
+  }
+  if (pFilter) {
+    filtered = filtered.filter(n => n.priority === pFilter);
+  }
+
+  // الإحصائيات
+  document.getElementById('totalNeeds').textContent     = needs.length;
+  document.getElementById('highPriority').textContent   = needs.filter(n => n.priority === 'عالية').length;
+  document.getElementById('mediumPriority').textContent = needs.filter(n => n.priority === 'متوسطة').length;
+  document.getElementById('fulfilled').textContent      = needs.filter(n => n.status === 'تم التلبية').length;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">
+      <div class="icon">📭</div>
+      ${q || pFilter ? 'لا توجد نتائج مطابقة' : 'لا توجد احتياجات مسجلة بعد'}
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((n, i) => {
+    const pCls = n.priority === 'عالية' ? 'priority-high' :
+                 n.priority === 'متوسطة' ? 'priority-medium' : 'priority-low';
+    const sCls = n.status === 'تم التلبية' ? 'badge-green' :
+                 n.status === 'قيد التنفيذ' ? 'badge-gold' : 'badge-nile';
+
+    return `
+      <tr>
+        <td>${i+1}</td>
+        <td><b>${n.type||'—'}</b></td>
+        <td>${n.family||'—'}</td>
+        <td>${n.shelter||'—'}</td>
+        <td>${n.quantity||'—'}</td>
+        <td><span class="priority-pill ${pCls}">${n.priority||'—'}</span></td>
+        <td><span class="badge ${sCls}">${n.status||'—'}</span></td>
+        <td>${n.date||'—'}</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="editNeed(${needs.indexOf(n)})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteNeed(${needs.indexOf(n)})">🗑️</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ==================== Modal ====================
+function openModal(edit = false) {
+  document.getElementById('modalOverlay').classList.add('active');
+  if (!edit) {
+    document.getElementById('modalTitle').textContent = '➕ إضافة احتياج جديد';
+    document.getElementById('needForm').reset();
+    document.getElementById('needId').value = '';
+    fillShelterOptions();
+    fillFamilyOptions();
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function editNeed(index) {
+  const n = needs[index];
+  if (!n) return;
+  openModal(true);
+  document.getElementById('modalTitle').textContent = '✏️ تعديل الاحتياج';
+  document.getElementById('needId').value   = index;
+  document.getElementById('type').value     = n.type || '';
+  document.getElementById('priority').value = n.priority || '';
+  document.getElementById('quantity').value = n.quantity || '';
+  document.getElementById('status').value   = n.status || 'قيد الانتظار';
+  document.getElementById('notes').value    = n.notes || '';
+  fillShelterOptions(n.shelter);
+  fillFamilyOptions(n.family);
+}
+
+function saveNeed(e) {
+  e.preventDefault();
+  const id = document.getElementById('needId').value;
+
+  const data = {
+    type:     document.getElementById('type').value,
+    priority: document.getElementById('priority').value,
+    family:   document.getElementById('family').value,
+    shelter:  document.getElementById('shelter').value,
+    quantity: document.getElementById('quantity').value.trim(),
+    status:   document.getElementById('status').value,
+    notes:    document.getElementById('notes').value.trim(),
+    date:     new Date().toLocaleDateString('ar-EG')
+  };
+
+  if (id === '') {
+    needs.push(data);
+  } else {
+    needs[parseInt(id)] = data;
+  }
+
+  saveNeeds(needs);
+  closeModal();
+  renderNeeds();
+}
+
+function deleteNeed(index) {
+  if (!confirm('هل أنت متأكد من حذف هذا الاحتياج؟')) return;
+  needs.splice(index, 1);
+  saveNeeds(needs);
+  renderNeeds();
+}
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ==================== تشغيل ====================
+renderNeeds();
+</script>
+</body>
+</html>
