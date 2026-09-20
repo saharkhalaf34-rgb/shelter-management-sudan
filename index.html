@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منصة إدارة مراكز الإيواء - السودان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="login-page">
+
+<div class="login-wrapper">
+  <div class="login-hero">
+    <div class="hero-flag"><span></span><span></span><span></span></div>
+    <h1>منصة إدارة مراكز الإيواء</h1>
+    <h2>جمهورية السودان</h2>
+    <p>نظام مركزي لإدارة معلومات النازحين ومراكز الإيواء وتنسيق المساعدات الإنسانية</p>
+    <ul class="hero-features">
+      <li>✔ تسجيل الأسر النازحة</li>
+      <li>✔ متابعة سعة المراكز</li>
+      <li>✔ تنسيق المساعدات الإنسانية</li>
+      <li>✔ تقارير وإحصائيات فورية</li>
+    </ul>
+  </div>
+
+  <div class="login-form-box">
+    <div class="form-logo">🇸🇩</div>
+    <h2>تسجيل الدخول</h2>
+    <p class="form-sub">أدخل بياناتك للوصول إلى النظام</p>
+
+    <form id="loginForm">
+      <div class="input-group">
+        <label for="username">اسم المستخدم</label>
+        <input type="text" id="username" placeholder="admin" required>
+      </div>
+      <div class="input-group">
+        <label for="password">كلمة المرور</label>
+        <input type="password" id="password" placeholder="••••••" required>
+      </div>
+      <div class="error-msg" id="errorMsg"></div>
+      <button type="submit" class="btn-primary">دخول</button>
+      <p class="hint">بيانات تجريبية: <b>admin</b> / <b>123456</b></p>
+    </form>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+</body>
+</html>
