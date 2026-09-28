@@ -35,7 +35,6 @@
 
 <div class="layout">
 
-  <!-- ============ الشريط الجانبي ============ -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-flag"><span></span><span></span><span></span></div>
@@ -55,7 +54,6 @@
     </div>
   </aside>
 
-  <!-- ============ المحتوى الرئيسي ============ -->
   <main class="main-content">
 
     <div class="topbar">
@@ -72,7 +70,6 @@
       </div>
     </div>
 
-    <!-- ملخص سريع -->
     <div class="stats-grid">
       <div class="stat-card nile">
         <div class="stat-icon">🏠</div>
@@ -96,10 +93,10 @@
       </div>
     </div>
 
-    <!-- الجدول -->
     <div class="card">
       <div class="card-header">
         <h2>قائمة المراكز</h2>
+        <button class="btn btn-primary" onclick="openModal()">➕ إضافة مركز جديد</button>
       </div>
 
       <div class="search-bar">
@@ -115,18 +112,55 @@
               <th>الولاية</th>
               <th>السعة</th>
               <th>الإشغال</th>
-              <th>نسبة الإشغال</th>
+              <th>النسبة</th>
               <th>الحالة</th>
+              <th>إجراءات</th>
             </tr>
           </thead>
           <tbody id="sheltersTable">
-            <tr><td colspan="7" class="empty-state">جاري التحميل...</td></tr>
+            <tr><td colspan="8" class="empty-state">جاري التحميل...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
   </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">➕ إضافة مركز جديد</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <form id="shelterForm" onsubmit="saveShelter(event)">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>اسم المركز *</label>
+          <input type="text" id="sName" required placeholder="مثال: مركز إيواء الخرطوم">
+        </div>
+        <div class="form-group">
+          <label>الولاية / الموقع *</label>
+          <input type="text" id="sLocation" required placeholder="مثال: الخرطوم">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>السعة الإجمالية *</label>
+            <input type="number" id="sCapacity" required min="1" placeholder="500">
+          </div>
+          <div class="form-group">
+            <label>الإشغال الحالي</label>
+            <input type="number" id="sOccupancy" min="0" value="0" placeholder="320">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+        <button type="submit" class="btn btn-primary">💾 حفظ</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script type="module" src="js/auth-guard.js"></script>
