@@ -1,48 +1,43 @@
-// ============================================
-// Shelters Page Logic - قراءة المراكز من Firestore
-// Shelter Sudan - Shelter Management Platform
-// ============================================
-
+// Shelters Page with CRUD
 import { db, auth } from "./firebase.js";
 import { 
   collection, 
-  getDocs 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-// ====== اسم المستخدم ======
+let allShelters = [];
+let editingId = null;
+
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    const userNameEl = document.getElementById("userName");
-    const avatarEl = document.getElementById("avatar");
-    if (userNameEl) userNameEl.textContent = user.email.split("@")[0];
-    if (avatarEl) avatarEl.textContent = user.email.charAt(0).toUpperCase();
+    const n = document.getElementById("userName");
+    const a = document.getElementById("avatar");
+    if (n) n.textContent = user.email.split("@")[0];
+    if (a) a.textContent = user.email.charAt(0).toUpperCase();
   }
 });
 
-// ====== متغير عام ======
-let allShelters = [];
-
-// ====== تحميل البيانات من Firestore ======
+// ====== تحميل المراكز ======
 async function loadShelters() {
   const tbody = document.getElementById("sheltersTable");
   try {
     const snap = await getDocs(collection(db, "shelters"));
-    
     if (snap.empty) {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty-state">
-        <div class="icon">📭</div>
-        لا توجد مراكز مسجلة بعد
-      </td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="empty-state">لا توجد مراكز. اضغط "إضافة مركز" للبدء</td></tr>`;
+      updateStats();
       return;
     }
-
-    allShelters = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    allShelters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderShelters();
     updateStats();
   } catch (error) {
-    console.error("❌ خطأ في التحميل:", error);
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">حدث خطأ في تحميل البيانات</td></tr>`;
+    console.error("خطأ:", error);
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">حدث خطأ في التحميل</td></tr>`;
   }
 }
 
@@ -60,10 +55,7 @@ function renderShelters() {
   }
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">
-      <div class="icon">📭</div>
-      لا توجد نتائج مطابقة
-    </td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">لا توجد نتائج</td></tr>`;
     return;
   }
 
@@ -89,6 +81,10 @@ function renderShelters() {
           <div class="capacity-text">${pct}%</div>
         </td>
         <td><span class="badge ${badge}">${status}</span></td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="editShelter('${s.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteShelter('${s.id}', '${s.name}')">🗑️</button>
+        </td>
       </tr>`;
   }).join("");
 }
@@ -98,16 +94,85 @@ function updateStats() {
   const totalCap = allShelters.reduce((a, s) => a + (Number(s.capacity) || 0), 0);
   const totalOcc = allShelters.reduce((a, s) => a + (Number(s.currentOccupancy) || 0), 0);
 
-  updateEl("totalShelters", allShelters.length);
-  updateEl("totalCapacity", totalCap);
-  updateEl("totalOccupied", totalOcc);
-  updateEl("totalAvailable", Math.max(totalCap - totalOcc, 0));
+  setEl("totalShelters", allShelters.length);
+  setEl("totalCapacity", totalCap);
+  setEl("totalOccupied", totalOcc);
+  setEl("totalAvailable", Math.max(totalCap - totalOcc, 0));
 }
 
-function updateEl(id, value) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = value;
+function setEl(id, v) {
+  const e = document.getElementById(id);
+  if (e) e.textContent = v;
 }
+
+// ====== نافذة الإضافة/التعديل ======
+window.openModal = function() {
+  editingId = null;
+  document.getElementById("modalTitle").textContent = "➕ إضافة مركز جديد";
+  document.getElementById("shelterForm").reset();
+  document.getElementById("modalOverlay").classList.add("active");
+};
+
+window.closeModal = function() {
+  document.getElementById("modalOverlay").classList.remove("active");
+};
+
+window.editShelter = function(id) {
+  const s = allShelters.find(x => x.id === id);
+  if (!s) return;
+  editingId = id;
+  document.getElementById("modalTitle").textContent = "✏️ تعديل مركز";
+  document.getElementById("sName").value = s.name || "";
+  document.getElementById("sLocation").value = s.location || "";
+  document.getElementById("sCapacity").value = s.capacity || "";
+  document.getElementById("sOccupancy").value = s.currentOccupancy || "";
+  document.getElementById("modalOverlay").classList.add("active");
+};
+
+// ====== حفظ (إضافة أو تعديل) ======
+window.saveShelter = async function(e) {
+  e.preventDefault();
+  const data = {
+    name: document.getElementById("sName").value.trim(),
+    location: document.getElementById("sLocation").value.trim(),
+    capacity: Number(document.getElementById("sCapacity").value) || 0,
+    currentOccupancy: Number(document.getElementById("sOccupancy").value) || 0,
+    status: "active"
+  };
+
+  if (!data.name || !data.location) {
+    alert("الرجاء إدخال اسم المركز والموقع");
+    return;
+  }
+
+  try {
+    if (editingId) {
+      await updateDoc(doc(db, "shelters", editingId), data);
+      alert("✅ تم التعديل بنجاح");
+    } else {
+      await addDoc(collection(db, "shelters"), data);
+      alert("✅ تمت الإضافة بنجاح");
+    }
+    closeModal();
+    loadShelters();
+  } catch (error) {
+    console.error("خطأ:", error);
+    alert("❌ حدث خطأ: " + error.message);
+  }
+};
+
+// ====== حذف ======
+window.deleteShelter = async function(id, name) {
+  if (!confirm(`هل تريد حذف "${name}"؟`)) return;
+  try {
+    await deleteDoc(doc(db, "shelters", id));
+    alert("✅ تم الحذف");
+    loadShelters();
+  } catch (error) {
+    console.error("خطأ:", error);
+    alert("❌ حدث خطأ في الحذف");
+  }
+};
 
 // ====== البحث ======
 document.getElementById("searchInput")?.addEventListener("input", renderShelters);
