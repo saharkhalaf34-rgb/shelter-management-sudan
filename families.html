@@ -61,7 +61,7 @@
       <div class="stat-card">
         <div class="stat-icon">📊</div>
         <div class="stat-value" id="statAvg">0</div>
-        <div class="stat-label">متوسط الأسرة</div>
+        <div class="stat-label">متوسط حجم الأسرة</div>
       </div>
       <div class="stat-card red">
         <div class="stat-icon">🏠</div>
@@ -73,10 +73,11 @@
     <div class="card">
       <div class="card-header">
         <h2>قائمة الأسر النازحة</h2>
+        <button class="btn btn-primary" onclick="openModal()">➕ إضافة أسرة جديدة</button>
       </div>
 
       <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="🔍 ابحث بالاسم أو المركز أو رقم الهاتف...">
+        <input type="text" id="searchInput" placeholder="🔍 ابحث بالاسم أو المركز أو الهاتف...">
       </div>
 
       <div class="table-wrapper">
@@ -99,6 +100,44 @@
     </div>
 
   </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">➕ إضافة أسرة جديدة</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <form id="familyForm" onsubmit="saveFamily(event)">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>اسم رب الأسرة *</label>
+          <input type="text" id="fHead" required placeholder="مثال: محمد أحمد">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>عدد الأفراد *</label>
+            <input type="number" id="fMembers" required min="1" placeholder="5">
+          </div>
+          <div class="form-group">
+            <label>رقم الهاتف</label>
+            <input type="tel" id="fPhone" placeholder="09xxxxxxxx">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>مركز الإيواء *</label>
+          <select id="fShelter" required>
+            <option value="">-- اختر المركز --</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+        <button type="submit" class="btn btn-primary">💾 حفظ</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script type="module" src="js/auth-guard.js"></script>
