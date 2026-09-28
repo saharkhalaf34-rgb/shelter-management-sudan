@@ -3,37 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>التقارير والإحصائيات - منصة إدارة مراكز الإيواء</title>
+<title>التقارير - منصة إدارة مراكز الإيواء</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/shared.css">
 <style>
   .report-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
     margin-bottom: 25px;
   }
-  @media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } }
+  .report-box {
+    background: var(--white);
+    padding: 20px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border-right: 4px solid var(--nile);
+  }
+  .report-box.gold { border-right-color: var(--gold); }
+  .report-box.red { border-right-color: var(--red); }
+  .report-box.green { border-right-color: var(--green); }
+  .report-box .label { font-size: 13px; color: var(--gray); margin-bottom: 8px; }
+  .report-box .value { font-size: 26px; font-weight: 900; color: var(--nile); }
 
-  .report-card {
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+
+  .chart-card {
     background: var(--white);
     padding: 22px;
     border-radius: var(--radius);
     box-shadow: var(--shadow);
+    margin-bottom: 20px;
   }
-  .report-card h3 {
+  .chart-card h3 {
     font-size: 16px;
     font-weight: 800;
     color: var(--nile);
     margin-bottom: 18px;
     padding-bottom: 12px;
     border-bottom: 2px solid var(--sand);
-    display: flex;
-    align-items: center;
-    gap: 8px;
   }
-
   .bar-row {
     display: flex;
     align-items: center;
@@ -41,70 +56,36 @@
     margin-bottom: 14px;
     font-size: 14px;
   }
-  .bar-label { width: 130px; font-weight: 700; color: var(--nile); font-size: 13px; }
+  .bar-label { width: 110px; font-weight: 700; color: var(--nile); }
   .bar-track {
     flex: 1;
-    height: 24px;
+    height: 22px;
     background: var(--sand);
     border-radius: 50px;
     overflow: hidden;
-    position: relative;
   }
   .bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--green), #00a03a);
     border-radius: 50px;
-    transition: width 0.8s ease;
+    transition: width 0.8s;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     padding-left: 10px;
-    color: var(--white);
+    color: white;
     font-size: 12px;
     font-weight: 700;
   }
-  .bar-fill.red { background: linear-gradient(90deg, var(--red), #f0334e); }
-  .bar-fill.gold { background: linear-gradient(90deg, var(--gold), #e0b930); }
   .bar-fill.nile { background: linear-gradient(90deg, var(--nile), #2e6d99); }
-  .bar-fill.purple { background: linear-gradient(90deg, #6a4c93, #8e6bb0); }
-
-  .actions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-  }
-  .action-btn {
-    background: var(--white);
-    border: 2px solid var(--sand-2);
-    padding: 20px;
-    border-radius: var(--radius);
-    cursor: pointer;
-    font-family: 'Cairo', sans-serif;
-    text-align: center;
-    transition: 0.25s;
-  }
-  .action-btn:hover {
-    border-color: var(--green);
-    transform: translateY(-4px);
-    box-shadow: 0 10px 25px rgba(0,114,41,0.15);
-  }
-  .action-btn .icon { font-size: 32px; margin-bottom: 10px; display: block; }
-  .action-btn .title { font-weight: 800; color: var(--nile); font-size: 15px; margin-bottom: 4px; }
-  .action-btn .sub { font-size: 12px; color: var(--gray); }
-
-  .summary-table td { padding: 10px 12px; font-size: 14px; }
-  .summary-table tr.total {
-    background: var(--sand);
-    font-weight: 800;
-    color: var(--nile);
-  }
+  .bar-fill.gold { background: linear-gradient(90deg, var(--gold), #e0b930); }
+  .bar-fill.red { background: linear-gradient(90deg, var(--red), #f0334e); }
+  .bar-fill.green { background: linear-gradient(90deg, var(--green), #00a03a); }
 </style>
 </head>
 <body>
 
 <div class="layout">
 
-  <!-- ============ الشريط الجانبي ============ -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-flag"><span></span><span></span><span></span></div>
@@ -124,7 +105,6 @@
     </div>
   </aside>
 
-  <!-- ============ المحتوى الرئيسي ============ -->
   <main class="main-content">
 
     <div class="topbar">
@@ -141,217 +121,85 @@
       </div>
     </div>
 
-    <!-- الملخص العام -->
-    <div class="card">
-      <div class="card-header">
-        <h2>📋 الملخص العام للنظام</h2>
-        <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ طباعة التقرير</button>
-      </div>
-      <div class="table-wrapper">
-        <table class="summary-table">
-          <tbody id="summaryTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- الرسوم -->
+    <h2 style="margin-bottom: 15px; color: var(--nile);">🏠 المراكز والسعة</h2>
     <div class="report-grid">
-
-      <div class="report-card">
-        <h3>📊 الإشغال حسب المراكز</h3>
-        <div id="occupancyChart"></div>
+      <div class="report-box">
+        <div class="label">🏠 إجمالي المراكز</div>
+        <div class="value" id="rShelters">0</div>
       </div>
-
-      <div class="report-card">
-        <h3>👥 توزيع الأسر حسب الولاية الأصلية</h3>
-        <div id="originChart"></div>
+      <div class="report-box gold">
+        <div class="label">👥 السعة الإجمالية</div>
+        <div class="value" id="rCapacity">0</div>
       </div>
-
-      <div class="report-card">
-        <h3>📦 الاحتياجات حسب النوع</h3>
-        <div id="needsChart"></div>
+      <div class="report-box red">
+        <div class="label">🛏️ الإشغال الحالي</div>
+        <div class="value" id="rOccupied">0</div>
       </div>
-
-      <div class="report-card">
-        <h3>🤝 المساعدات حسب المنظمة</h3>
-        <div id="aidChart"></div>
+      <div class="report-box green">
+        <div class="label">📊 نسبة الإشغال</div>
+        <div class="value" id="rOccupancyPct">0%</div>
       </div>
-
     </div>
 
-    <!-- إجراءات سريعة -->
-    <div class="card">
-      <div class="card-header">
-        <h2>⚡ إجراءات سريعة</h2>
+    <h2 style="margin: 20px 0 15px; color: var(--nile);">👨‍👩‍👧 الأسر</h2>
+    <div class="report-grid">
+      <div class="report-box">
+        <div class="label">👨‍👩‍👧 إجمالي الأسر</div>
+        <div class="value" id="rFamilies">0</div>
       </div>
-      <div class="actions-grid">
-        <button class="action-btn" onclick="exportCSV('shelters')">
-          <span class="icon">🏠</span>
-          <div class="title">تصدير المراكز</div>
-          <div class="sub">CSV</div>
-        </button>
-        <button class="action-btn" onclick="exportCSV('families')">
-          <span class="icon">👨‍👩‍👧</span>
-          <div class="title">تصدير الأسر</div>
-          <div class="sub">CSV</div>
-        </button>
-        <button class="action-btn" onclick="exportCSV('needs')">
-          <span class="icon">📦</span>
-          <div class="title">تصدير الاحتياجات</div>
-          <div class="sub">CSV</div>
-        </button>
-        <button class="action-btn" onclick="exportCSV('aid')">
-          <span class="icon">🤝</span>
-          <div class="title">تصدير المساعدات</div>
-          <div class="sub">CSV</div>
-        </button>
-        <button class="action-btn" onclick="clearAll()" style="border-color:var(--red);">
-          <span class="icon">🗑️</span>
-          <div class="title" style="color:var(--red);">حذف كل البيانات</div>
-          <div class="sub">احذر!</div>
-        </button>
+      <div class="report-box gold">
+        <div class="label">👥 إجمالي الأفراد</div>
+        <div class="value" id="rPeople">0</div>
+      </div>
+      <div class="report-box green">
+        <div class="label">📊 متوسط حجم الأسرة</div>
+        <div class="value" id="rAvg">0</div>
+      </div>
+    </div>
+
+    <h2 style="margin: 20px 0 15px; color: var(--nile);">📦 المساعدات والاحتياجات</h2>
+    <div class="report-grid">
+      <div class="report-box">
+        <div class="label">🤝 عدد المساعدات</div>
+        <div class="value" id="rAid">0</div>
+      </div>
+      <div class="report-box gold">
+        <div class="label">📦 إجمالي الكميات</div>
+        <div class="value" id="rAidQty">0</div>
+      </div>
+      <div class="report-box">
+        <div class="label">📋 إجمالي الاحتياجات</div>
+        <div class="value" id="rNeeds">0</div>
+      </div>
+      <div class="report-box red">
+        <div class="label">🚨 أولوية عالية</div>
+        <div class="value" id="rHighNeeds">0</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>📊 أعلى المراكز إشغالاً</h3>
+        <div id="topShelters"><div class="empty-state">جاري التحميل...</div></div>
+      </div>
+      <div class="chart-card">
+        <h3>👨‍👩‍👧 توزيع الأسر حسب المركز</h3>
+        <div id="familiesChart"><div class="empty-state">جاري التحميل...</div></div>
+      </div>
+      <div class="chart-card">
+        <h3>🤝 المساعدات حسب النوع</h3>
+        <div id="aidChart"><div class="empty-state">جاري التحميل...</div></div>
+      </div>
+      <div class="chart-card">
+        <h3>📦 الاحتياجات حسب النوع</h3>
+        <div id="needsChart"><div class="empty-state">جاري التحميل...</div></div>
       </div>
     </div>
 
   </main>
 </div>
 
-<script>
-// ==================== حماية ====================
-if (localStorage.getItem('sms_logged_in') !== 'true') {
-  window.location.href = 'index.html';
-}
-const user = localStorage.getItem('sms_user') || 'admin';
-document.getElementById('userName').textContent = user === 'admin' ? 'مدير النظام' : user;
-document.getElementById('avatar').textContent = user.charAt(0).toUpperCase();
-
-function logout() {
-  if (confirm('هل تريد تسجيل الخروج؟')) {
-    localStorage.removeItem('sms_logged_in');
-    localStorage.removeItem('sms_user');
-    window.location.href = 'index.html';
-  }
-}
-function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
-
-// ==================== البيانات ====================
-function get(key) {
-  try { return JSON.parse(localStorage.getItem(key)) || []; }
-  catch(e) { return []; }
-}
-const shelters = get('sms_shelters');
-const families = get('sms_families');
-const needs    = get('sms_needs');
-const aidList  = get('sms_aid');
-
-// ==================== الملخص العام ====================
-const totalCapacity  = shelters.reduce((a,s) => a + (parseInt(s.capacity)||0), 0);
-const totalOccupied  = shelters.reduce((a,s) => a + (parseInt(s.occupied)||0), 0);
-const totalPeople    = families.reduce((a,f) => a + (parseInt(f.count)||0), 0);
-const totalChildren  = families.reduce((a,f) => a + (parseInt(f.children)||0), 0);
-const totalBenef     = aidList.reduce((a,x) => a + (parseInt(x.beneficiaries)||0), 0);
-
-document.getElementById('summaryTable').innerHTML = `
-  <tr><td>🏠 عدد مراكز الإيواء</td><td><b>${shelters.length}</b> مركز</td><td>السعة الإجمالية</td><td><b>${totalCapacity}</b> فرد</td></tr>
-  <tr><td>👥 الإشغال الحالي</td><td><b>${totalOccupied}</b> فرد</td><td>الأماكن المتاحة</td><td><b>${Math.max(totalCapacity-totalOccupied,0)}</b> فرد</td></tr>
-  <tr><td>👨‍👩‍👧 عدد الأسر النازحة</td><td><b>${families.length}</b> أسرة</td><td>إجمالي الأفراد</td><td><b>${totalPeople}</b> فرد</td></tr>
-  <tr><td>👶 عدد الأطفال</td><td><b>${totalChildren}</b> طفل</td><td>متوسط حجم الأسرة</td><td><b>${families.length ? (totalPeople/families.length).toFixed(1) : 0}</b> فرد</td></tr>
-  <tr><td>📦 إجمالي الاحتياجات</td><td><b>${needs.length}</b> احتياج</td><td>أولوية عالية</td><td><b>${needs.filter(n=>n.priority==='عالية').length}</b></td></tr>
-  <tr class="total"><td>🤝 عدد المساعدات</td><td>${aidList.length} مساعدة</td><td>إجمالي المستفيدين</td><td>${totalBenef} مستفيد</td></tr>
-`;
-
-// ==================== دالة رسم الأعمدة ====================
-function drawBars(containerId, data, colorClass = '') {
-  const box = document.getElementById(containerId);
-  if (!data.length) {
-    box.innerHTML = '<div class="empty-state"><div class="icon">📭</div>لا توجد بيانات</div>';
-    return;
-  }
-  const max = Math.max(...data.map(d => d.value)) || 1;
-  box.innerHTML = data.map(d => {
-    const pct = Math.round((d.value / max) * 100);
-    return `
-      <div class="bar-row">
-        <div class="bar-label" title="${d.label}">${d.label.length > 20 ? d.label.substring(0,20)+'...' : d.label}</div>
-        <div class="bar-track">
-          <div class="bar-fill ${colorClass}" style="width:${pct}%">${d.value}</div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-// ==================== 1. الإشغال حسب المراكز ====================
-drawBars('occupancyChart',
-  shelters.slice(0,6).map(s => ({
-    label: s.name || '—',
-    value: parseInt(s.occupied) || 0
-  })),
-  ''
-);
-
-// ==================== 2. الأسر حسب الولاية الأصلية ====================
-const originCount = {};
-families.forEach(f => {
-  const o = f.origin || 'غير محدد';
-  originCount[o] = (originCount[o] || 0) + 1;
-});
-drawBars('originChart',
-  Object.entries(originCount).map(([k,v]) => ({ label: k, value: v })).sort((a,b) => b.value - a.value).slice(0,6),
-  'nile'
-);
-
-// ==================== 3. الاحتياجات حسب النوع ====================
-const needsCount = {};
-needs.forEach(n => {
-  const t = (n.type || 'أخرى').replace(/^[^\s]+\s/, ''); // إزالة الإيموجي
-  needsCount[t] = (needsCount[t] || 0) + 1;
-});
-drawBars('needsChart',
-  Object.entries(needsCount).map(([k,v]) => ({ label: k, value: v })).sort((a,b) => b.value - a.value).slice(0,6),
-  'gold'
-);
-
-// ==================== 4. المساعدات حسب المنظمة ====================
-const orgCount = {};
-aidList.forEach(a => {
-  const o = a.org || 'غير محدد';
-  orgCount[o] = (orgCount[o] || 0) + 1;
-});
-drawBars('aidChart',
-  Object.entries(orgCount).map(([k,v]) => ({ label: k, value: v })).sort((a,b) => b.value - a.value).slice(0,6),
-  'purple'
-);
-
-// ==================== تصدير CSV ====================
-function exportCSV(type) {
-  const data = get('sms_' + type);
-  if (!data.length) { alert('لا توجد بيانات للتصدير'); return; }
-
-  const headers = Object.keys(data[0]);
-  const rows = [headers.join(',')];
-
-  data.forEach(item => {
-    rows.push(headers.map(h => `"${String(item[h] || '').replace(/"/g,'""')}"`).join(','));
-  });
-
-  const csv = '\uFEFF' + rows.join('\n'); // BOM للعربي
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `${type}_${new Date().toISOString().split('T')[0]}.csv`;
-  link.click();
-}
-
-// ==================== حذف كل البيانات ====================
-function clearAll() {
-  if (!confirm('⚠️ هل أنت متأكد من حذف جميع البيانات؟ لا يمكن التراجع!')) return;
-  if (!confirm('⚠️ تأكيد أخير: سيتم حذف كل المراكز والأسر والاحتياجات والمساعدات')) return;
-
-  ['sms_shelters','sms_families','sms_needs','sms_aid'].forEach(k => localStorage.removeItem(k));
-  alert('✅ تم حذف جميع البيانات');
-  window.location.reload();
-}
-</script>
-  <script type="module" src="js/auth-guard.js"></script>
+<script type="module" src="js/auth-guard.js"></script>
+<script type="module" src="js/reports.js"></script>
 </body>
 </html>
