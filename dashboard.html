@@ -160,8 +160,8 @@
       </div>
       <div class="stat-card red">
         <div class="stat-icon">📦</div>
-        <div class="stat-value" id="statNeeds">0</div>
-        <div class="stat-label">احتياجات مسجلة</div>
+        <div class="stat-value" id="statAid">0</div>
+        <div class="stat-label">مساعدات موزعة</div>
       </div>
     </div>
 
@@ -176,8 +176,8 @@
       </div>
 
       <div class="chart-card">
-        <h3>📦 الاحتياجات الأكثر تسجيلاً</h3>
-        <div id="needsChart">
+        <h3>🤝 المساعدات حسب النوع</h3>
+        <div id="aidChart">
           <div class="empty-state"><div class="icon">📭</div>لا توجد بيانات</div>
         </div>
       </div>
@@ -198,11 +198,11 @@
               <th>اسم رب الأسرة</th>
               <th>عدد الأفراد</th>
               <th>مركز الإيواء</th>
-              <th>تاريخ التسجيل</th>
+              <th>رقم الهاتف</th>
             </tr>
           </thead>
           <tbody id="recentFamiliesTable">
-            <tr><td colspan="5" class="empty-state">لا توجد أسر مسجلة بعد</td></tr>
+            <tr><td colspan="5" class="empty-state">جاري التحميل...</td></tr>
           </tbody>
         </table>
       </div>
@@ -211,116 +211,7 @@
   </main>
 </div>
 
-<script>
-// ==================== حماية الصفحة ====================
-if (localStorage.getItem('sms_logged_in') !== 'true') {
-  window.location.href = 'index.html';
-}
-
-// ==================== اسم المستخدم ====================
-const user = localStorage.getItem('sms_user') || 'admin';
-document.getElementById('userName').textContent = user === 'admin' ? 'مدير النظام' : user;
-document.getElementById('avatar').textContent = user.charAt(0).toUpperCase();
-
-// ==================== تسجيل الخروج ====================
-function logout() {
-  if (confirm('هل تريد تسجيل الخروج؟')) {
-    localStorage.removeItem('sms_logged_in');
-    localStorage.removeItem('sms_user');
-    window.location.href = 'index.html';
-  }
-}
-
-// ==================== القائمة الجانبية ====================
-function toggleMenu() {
-  document.getElementById('sidebar').classList.toggle('open');
-}
-
-// ==================== البيانات ====================
-function getData(key) {
-  try { return JSON.parse(localStorage.getItem(key)) || []; }
-  catch(e) { return []; }
-}
-
-const shelters = getData('sms_shelters');
-const families = getData('sms_families');
-const needs    = getData('sms_needs');
-
-// ==================== الإحصائيات ====================
-document.getElementById('statShelters').textContent = shelters.length;
-document.getElementById('statFamilies').textContent = families.length;
-document.getElementById('statPeople').textContent   = families.reduce((s,f) => s + (parseInt(f.count)||0), 0);
-document.getElementById('statNeeds').textContent    = needs.length;
-
-// ==================== رسم الإشغال ====================
-function renderOccupancy() {
-  const box = document.getElementById('occupancyChart');
-  if (!shelters.length) return;
-
-  box.innerHTML = shelters.slice(0, 6).map(s => {
-    const capacity = parseInt(s.capacity) || 0;
-    const occupied = parseInt(s.occupied) || 0;
-    const pct = capacity ? Math.min(Math.round((occupied / capacity) * 100), 100) : 0;
-    const color = pct > 85 ? 'red' : pct > 60 ? 'gold' : '';
-    return `
-      <div class="bar-row">
-        <div class="bar-label">${s.name || '—'}</div>
-        <div class="bar-track">
-          <div class="bar-fill ${color}" style="width:${pct}%">${pct}%</div>
-        </div>
-      </div>`;
-  }).join('');
-}
-renderOccupancy();
-
-// ==================== رسم الاحتياجات ====================
-function renderNeedsChart() {
-  const box = document.getElementById('needsChart');
-  if (!needs.length) return;
-
-  // عد الاحتياجات
-  const counter = {};
-  needs.forEach(n => {
-    const type = n.type || 'أخرى';
-    counter[type] = (counter[type] || 0) + 1;
-  });
-
-  const entries = Object.entries(counter).sort((a,b) => b[1] - a[1]).slice(0,6);
-  const max = entries[0]?.[1] || 1;
-
-  box.innerHTML = entries.map(([type, count]) => {
-    const pct = Math.round((count / max) * 100);
-    return `
-      <div class="bar-row">
-        <div class="bar-label">${type}</div>
-        <div class="bar-track">
-          <div class="bar-fill nile" style="width:${pct}%">${count}</div>
-        </div>
-      </div>`;
-  }).join('');
-}
-renderNeedsChart();
-
-// ==================== أحدث الأسر ====================
-function renderRecentFamilies() {
-  const tbody = document.getElementById('recentFamiliesTable');
-  if (!families.length) return;
-
-  const recent = families.slice(-5).reverse();
-  tbody.innerHTML = recent.map((f, i) => `
-    <tr>
-      <td>${recent.length - i}</td>
-      <td><b>${f.head || '—'}</b></td>
-      <td>${f.count || 0} أفراد</td>
-      <td>${f.shelter || '—'}</td>
-      <td>${f.date || '—'}</td>
-    </tr>
-  `).join('');
-}
-renderRecentFamilies();
-</script>
-  <script type="module" src="js/auth-guard.js"></script>
-  <script type="module" src="js/auth-guard.js"></script>
+<script type="module" src="js/auth-guard.js"></script>
 <script type="module" src="js/dashboard.js"></script>
 </body>
   </html>
