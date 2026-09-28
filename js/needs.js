@@ -1,9 +1,13 @@
-// Needs Page
+// Needs Page with CRUD
 import { db, auth } from "./firebase.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { 
+  collection, getDocs, addDoc, updateDoc, deleteDoc, doc 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 let allNeeds = [];
+let allFamilies = [];
+let editingId = null;
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -14,21 +18,31 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-async function loadNeeds() {
+async function loadAll() {
   const tbody = document.getElementById("needsTable");
   try {
-    const snap = await getDocs(collection(db, "needs"));
-    if (snap.empty) {
-      tbody.innerHTML = `<tr><td colspan="6" class="empty-state">لا توجد احتياجات مسجلة بعد</td></tr>`;
-      return;
-    }
-    allNeeds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const [nSnap, fSnap] = await Promise.all([
+      getDocs(collection(db, "needs")),
+      getDocs(collection(db, "families"))
+    ]);
+
+    allNeeds = nSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allFamilies = fSnap.docs.map(d => d.data());
+
+    fillFamilyOptions();
     renderNeeds();
     updateStats();
   } catch (error) {
     console.error("خطأ:", error);
     tbody.innerHTML = `<tr><td colspan="6" class="empty-state">حدث خطأ في التحميل</td></tr>`;
   }
+}
+
+function fillFamilyOptions() {
+  const sel = document.getElementById("nFamily");
+  if (!sel) return;
+  sel.innerHTML = `<option value="">-- اختر الأسرة --</option>` +
+    allFamilies.map(f => `<option value="${f.headName}">${f.headName}</option>`).join("");
 }
 
 function renderNeeds() {
@@ -59,7 +73,10 @@ function renderNeeds() {
         <td>${x.type || "—"}</td>
         <td><span class="badge ${badge}">${p || "—"}</span></td>
         <td>${x.quantity || 0}</td>
-        <td>—</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="editNeed('${x.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteNeed('${x.id}', '${x.familyName}')">🗑️</button>
+        </td>
       </tr>
     `;
   }).join("");
@@ -78,6 +95,71 @@ function updateStats() {
   setEl("statTypes", types);
 }
 
+window.openModal = function() {
+  editingId = null;
+  document.getElementById("modalTitle").textContent = "➕ إضافة احتياج";
+  document.getElementById("needForm").reset();
+  document.getElementById("modalOverlay").classList.add("active");
+};
+
+window.closeModal = function() {
+  document.getElementById("modalOverlay").classList.remove("active");
+};
+
+window.editNeed = function(id) {
+  const x = allNeeds.find(y => y.id === id);
+  if (!x) return;
+  editingId = id;
+  document.getElementById("modalTitle").textContent = "✏️ تعديل احتياج";
+  document.getElementById("nFamily").value = x.familyName || "";
+  document.getElementById("nType").value = x.type || "";
+  document.getElementById("nPriority").value = x.priority || "";
+  document.getElementById("nQuantity").value = x.quantity || "";
+  document.getElementById("modalOverlay").classList.add("active");
+};
+
+window.saveNeed = async function(e) {
+  e.preventDefault();
+  const data = {
+    familyName: document.getElementById("nFamily").value,
+    type: document.getElementById("nType").value.trim(),
+    priority: document.getElementById("nPriority").value,
+    quantity: Number(document.getElementById("nQuantity").value) || 0
+  };
+
+  if (!data.familyName || !data.type || !data.priority) {
+    alert("الرجاء إدخال جميع الحقول المطلوبة");
+    return;
+  }
+
+  try {
+    if (editingId) {
+      await updateDoc(doc(db, "needs", editingId), data);
+      alert("✅ تم التعديل");
+    } else {
+      await addDoc(collection(db, "needs"), data);
+      alert("✅ تمت الإضافة");
+    }
+    closeModal();
+    loadAll();
+  } catch (error) {
+    console.error("خطأ:", error);
+    alert("❌ حدث خطأ: " + error.message);
+  }
+};
+
+window.deleteNeed = async function(id, name) {
+  if (!confirm(`حذف احتياج "${name}"؟`)) return;
+  try {
+    await deleteDoc(doc(db, "needs", id));
+    alert("✅ تم الحذف");
+    loadAll();
+  } catch (error) {
+    console.error("خطأ:", error);
+    alert("❌ فشل الحذف");
+  }
+};
+
 document.getElementById("searchInput")?.addEventListener("input", renderNeeds);
 
-loadNeeds();
+loadAll();
