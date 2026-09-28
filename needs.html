@@ -73,6 +73,7 @@
     <div class="card">
       <div class="card-header">
         <h2>قائمة الاحتياجات</h2>
+        <button class="btn btn-primary" onclick="openModal()">➕ إضافة احتياج</button>
       </div>
       <div class="search-bar">
         <input type="text" id="searchInput" placeholder="🔍 ابحث باسم الأسرة أو نوع الاحتياج...">
@@ -97,6 +98,49 @@
     </div>
 
   </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">➕ إضافة احتياج</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <form id="needForm" onsubmit="saveNeed(event)">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>الأسرة *</label>
+          <select id="nFamily" required>
+            <option value="">-- اختر الأسرة --</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>نوع الاحتياج *</label>
+            <input type="text" id="nType" required placeholder="مثال: غذاء">
+          </div>
+          <div class="form-group">
+            <label>الكمية *</label>
+            <input type="number" id="nQuantity" required min="1" placeholder="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>الأولوية *</label>
+          <select id="nPriority" required>
+            <option value="">-- اختر الأولوية --</option>
+            <option value="عالية">عالية</option>
+            <option value="متوسطة">متوسطة</option>
+            <option value="منخفضة">منخفضة</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+        <button type="submit" class="btn btn-primary">💾 حفظ</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script type="module" src="js/auth-guard.js"></script>
