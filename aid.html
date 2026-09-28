@@ -73,6 +73,7 @@
     <div class="card">
       <div class="card-header">
         <h2>قائمة المساعدات</h2>
+        <button class="btn btn-primary" onclick="openModal()">➕ إضافة مساعدة</button>
       </div>
       <div class="search-bar">
         <input type="text" id="searchInput" placeholder="🔍 ابحث باسم الأسرة أو نوع المساعدة...">
@@ -97,6 +98,44 @@
     </div>
 
   </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">➕ إضافة مساعدة</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <form id="aidForm" onsubmit="saveAid(event)">
+      <div class="modal-body">
+        <div class="form-group">
+          <label>الأسرة المستفيدة *</label>
+          <select id="aFamily" required>
+            <option value="">-- اختر الأسرة --</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>نوع المساعدة *</label>
+            <input type="text" id="aType" required placeholder="مثال: سلة غذائية">
+          </div>
+          <div class="form-group">
+            <label>الكمية *</label>
+            <input type="number" id="aQuantity" required min="1" placeholder="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>وزّعها</label>
+          <input type="text" id="aBy" placeholder="admin" value="admin">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+        <button type="submit" class="btn btn-primary">💾 حفظ</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script type="module" src="js/auth-guard.js"></script>
