@@ -1,22 +1,12 @@
-// Aid Page with CRUD
-import { db, auth } from "./firebase.js";
+// Aid Page with CRUD + Role-Based Permissions
+import { db } from "./firebase.js";
 import { 
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 let allAid = [];
 let allFamilies = [];
 let editingId = null;
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    const n = document.getElementById("userName");
-    const a = document.getElementById("avatar");
-    if (n) n.textContent = user.email.split("@")[0];
-    if (a) a.textContent = user.email.charAt(0).toUpperCase();
-  }
-});
 
 async function loadAll() {
   const tbody = document.getElementById("aidTable");
@@ -62,19 +52,32 @@ function renderAid() {
     return;
   }
 
-  tbody.innerHTML = filtered.map((a, i) => `
-    <tr>
-      <td>${i + 1}</td>
-      <td><b>${a.familyName || "—"}</b></td>
-      <td><span class="badge badge-nile">${a.type || "—"}</span></td>
-      <td>${a.quantity || 0}</td>
-      <td>${a.distributedBy || "—"}</td>
-      <td>
-        <button class="btn btn-outline btn-sm" onclick="editAid('${a.id}')">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteAid('${a.id}', '${a.familyName}')">🗑️</button>
-      </td>
-    </tr>
-  `).join("");
+  const canEdit = window.canEdit ? window.canEdit() : false;
+  const canDelete = window.canDelete ? window.canDelete() : false;
+
+  tbody.innerHTML = filtered.map((a, i) => {
+    let actions = "";
+    if (canEdit) {
+      actions += `<button class="btn btn-outline btn-sm" onclick="editAid('${a.id}')">✏️</button> `;
+    }
+    if (canDelete) {
+      actions += `<button class="btn btn-danger btn-sm" onclick="deleteAid('${a.id}', '${a.familyName}')">🗑️</button>`;
+    }
+    if (!actions) {
+      actions = `<span style="color:#999; font-size:12px;">👁️ عرض فقط</span>`;
+    }
+
+    return `
+      <tr>
+        <td>${i + 1}</td>
+        <td><b>${a.familyName || "—"}</b></td>
+        <td><span class="badge badge-nile">${a.type || "—"}</span></td>
+        <td>${a.quantity || 0}</td>
+        <td>${a.distributedBy || "—"}</td>
+        <td>${actions}</td>
+      </tr>
+    `;
+  }).join("");
 }
 
 function updateStats() {
@@ -91,6 +94,10 @@ function updateStats() {
 }
 
 window.openModal = function() {
+  if (window.canAdd && !window.canAdd()) {
+    alert("⚠️ ليس لديك صلاحية الإضافة");
+    return;
+  }
   editingId = null;
   document.getElementById("modalTitle").textContent = "➕ إضافة مساعدة";
   document.getElementById("aidForm").reset();
@@ -102,6 +109,10 @@ window.closeModal = function() {
 };
 
 window.editAid = function(id) {
+  if (window.canEdit && !window.canEdit()) {
+    alert("⚠️ ليس لديك صلاحية التعديل");
+    return;
+  }
   const a = allAid.find(x => x.id === id);
   if (!a) return;
   editingId = id;
@@ -115,6 +126,16 @@ window.editAid = function(id) {
 
 window.saveAid = async function(e) {
   e.preventDefault();
+
+  if (editingId && window.canEdit && !window.canEdit()) {
+    alert("⚠️ ليس لديك صلاحية التعديل");
+    return;
+  }
+  if (!editingId && window.canAdd && !window.canAdd()) {
+    alert("⚠️ ليس لديك صلاحية الإضافة");
+    return;
+  }
+
   const data = {
     familyName: document.getElementById("aFamily").value,
     type: document.getElementById("aType").value.trim(),
@@ -144,6 +165,10 @@ window.saveAid = async function(e) {
 };
 
 window.deleteAid = async function(id, name) {
+  if (window.canDelete && !window.canDelete()) {
+    alert("⚠️ ليس لديك صلاحية الحذف");
+    return;
+  }
   if (!confirm(`حذف مساعدة "${name}"؟`)) return;
   try {
     await deleteDoc(doc(db, "aid", id));
@@ -156,5 +181,9 @@ window.deleteAid = async function(id, name) {
 };
 
 document.getElementById("searchInput")?.addEventListener("input", renderAid);
+
+window.addEventListener("roleReady", () => {
+  renderAid();
+});
 
 loadAll();
