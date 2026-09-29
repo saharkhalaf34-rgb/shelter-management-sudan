@@ -1,22 +1,12 @@
-// Needs Page with CRUD
-import { db, auth } from "./firebase.js";
+// Needs Page with CRUD + Role-Based Permissions
+import { db } from "./firebase.js";
 import { 
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 let allNeeds = [];
 let allFamilies = [];
 let editingId = null;
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    const n = document.getElementById("userName");
-    const a = document.getElementById("avatar");
-    if (n) n.textContent = user.email.split("@")[0];
-    if (a) a.textContent = user.email.charAt(0).toUpperCase();
-  }
-});
 
 async function loadAll() {
   const tbody = document.getElementById("needsTable");
@@ -63,9 +53,24 @@ function renderNeeds() {
     return;
   }
 
+  const canEdit = window.canEdit ? window.canEdit() : false;
+  const canDelete = window.canDelete ? window.canDelete() : false;
+
   tbody.innerHTML = filtered.map((x, i) => {
     const p = x.priority || "";
     const badge = p === "عالية" ? "badge-red" : p === "متوسطة" ? "badge-gold" : "badge-green";
+    
+    let actions = "";
+    if (canEdit) {
+      actions += `<button class="btn btn-outline btn-sm" onclick="editNeed('${x.id}')">✏️</button> `;
+    }
+    if (canDelete) {
+      actions += `<button class="btn btn-danger btn-sm" onclick="deleteNeed('${x.id}', '${x.familyName}')">🗑️</button>`;
+    }
+    if (!actions) {
+      actions = `<span style="color:#999; font-size:12px;">👁️ عرض فقط</span>`;
+    }
+
     return `
       <tr>
         <td>${i + 1}</td>
@@ -73,10 +78,7 @@ function renderNeeds() {
         <td>${x.type || "—"}</td>
         <td><span class="badge ${badge}">${p || "—"}</span></td>
         <td>${x.quantity || 0}</td>
-        <td>
-          <button class="btn btn-outline btn-sm" onclick="editNeed('${x.id}')">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteNeed('${x.id}', '${x.familyName}')">🗑️</button>
-        </td>
+        <td>${actions}</td>
       </tr>
     `;
   }).join("");
@@ -96,6 +98,10 @@ function updateStats() {
 }
 
 window.openModal = function() {
+  if (window.canAdd && !window.canAdd()) {
+    alert("⚠️ ليس لديك صلاحية الإضافة");
+    return;
+  }
   editingId = null;
   document.getElementById("modalTitle").textContent = "➕ إضافة احتياج";
   document.getElementById("needForm").reset();
@@ -107,6 +113,10 @@ window.closeModal = function() {
 };
 
 window.editNeed = function(id) {
+  if (window.canEdit && !window.canEdit()) {
+    alert("⚠️ ليس لديك صلاحية التعديل");
+    return;
+  }
   const x = allNeeds.find(y => y.id === id);
   if (!x) return;
   editingId = id;
@@ -120,6 +130,16 @@ window.editNeed = function(id) {
 
 window.saveNeed = async function(e) {
   e.preventDefault();
+
+  if (editingId && window.canEdit && !window.canEdit()) {
+    alert("⚠️ ليس لديك صلاحية التعديل");
+    return;
+  }
+  if (!editingId && window.canAdd && !window.canAdd()) {
+    alert("⚠️ ليس لديك صلاحية الإضافة");
+    return;
+  }
+
   const data = {
     familyName: document.getElementById("nFamily").value,
     type: document.getElementById("nType").value.trim(),
@@ -149,6 +169,10 @@ window.saveNeed = async function(e) {
 };
 
 window.deleteNeed = async function(id, name) {
+  if (window.canDelete && !window.canDelete()) {
+    alert("⚠️ ليس لديك صلاحية الحذف");
+    return;
+  }
   if (!confirm(`حذف احتياج "${name}"؟`)) return;
   try {
     await deleteDoc(doc(db, "needs", id));
@@ -161,5 +185,9 @@ window.deleteNeed = async function(id, name) {
 };
 
 document.getElementById("searchInput")?.addEventListener("input", renderNeeds);
+
+window.addEventListener("roleReady", () => {
+  renderNeeds();
+});
 
 loadAll();
