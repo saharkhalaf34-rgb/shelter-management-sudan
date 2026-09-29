@@ -1,4 +1,4 @@
-// Shelters Page with CRUD
+// Shelters Page with CRUD + Role-Based Permissions
 import { db, auth } from "./firebase.js";
 import { 
   collection, 
@@ -8,19 +8,9 @@ import {
   deleteDoc, 
   doc 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 let allShelters = [];
 let editingId = null;
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    const n = document.getElementById("userName");
-    const a = document.getElementById("avatar");
-    if (n) n.textContent = user.email.split("@")[0];
-    if (a) a.textContent = user.email.charAt(0).toUpperCase();
-  }
-});
 
 // ====== تحميل المراكز ======
 async function loadShelters() {
@@ -59,6 +49,9 @@ function renderShelters() {
     return;
   }
 
+  const canEdit = window.canEdit ? window.canEdit() : false;
+  const canDelete = window.canDelete ? window.canDelete() : false;
+
   tbody.innerHTML = filtered.map((s, i) => {
     const cap = Number(s.capacity) || 0;
     const occ = Number(s.currentOccupancy) || 0;
@@ -66,6 +59,18 @@ function renderShelters() {
     const cls = pct > 85 ? "full" : pct > 60 ? "warn" : "ok";
     const badge = pct > 85 ? "badge-red" : pct > 60 ? "badge-gold" : "badge-green";
     const status = pct > 85 ? "ممتلئ" : pct > 60 ? "شبه ممتلئ" : "متاح";
+
+    // أزرار الإجراءات حسب الصلاحيات
+    let actions = "";
+    if (canEdit) {
+      actions += `<button class="btn btn-outline btn-sm" onclick="editShelter('${s.id}')">✏️</button> `;
+    }
+    if (canDelete) {
+      actions += `<button class="btn btn-danger btn-sm" onclick="deleteShelter('${s.id}', '${s.name}')">🗑️</button>`;
+    }
+    if (!actions) {
+      actions = `<span style="color:#999; font-size:12px;">👁️ عرض فقط</span>`;
+    }
 
     return `
       <tr>
@@ -81,10 +86,7 @@ function renderShelters() {
           <div class="capacity-text">${pct}%</div>
         </td>
         <td><span class="badge ${badge}">${status}</span></td>
-        <td>
-          <button class="btn btn-outline btn-sm" onclick="editShelter('${s.id}')">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteShelter('${s.id}', '${s.name}')">🗑️</button>
-        </td>
+        <td>${actions}</td>
       </tr>`;
   }).join("");
 }
@@ -107,6 +109,10 @@ function setEl(id, v) {
 
 // ====== نافذة الإضافة/التعديل ======
 window.openModal = function() {
+  if (window.canAdd && !window.canAdd()) {
+    alert("⚠️ ليس لديك صلاحية الإضافة");
+    return;
+  }
   editingId = null;
   document.getElementById("modalTitle").textContent = "➕ إضافة مركز جديد";
   document.getElementById("shelterForm").reset();
@@ -118,6 +124,10 @@ window.closeModal = function() {
 };
 
 window.editShelter = function(id) {
+  if (window.canEdit && !window.canEdit()) {
+    alert("⚠️ ليس لديك صلاحية التعديل");
+    return;
+  }
   const s = allShelters.find(x => x.id === id);
   if (!s) return;
   editingId = id;
@@ -132,6 +142,17 @@ window.editShelter = function(id) {
 // ====== حفظ (إضافة أو تعديل) ======
 window.saveShelter = async function(e) {
   e.preventDefault();
+
+  // فحص الصلاحيات
+  if (editingId && window.canEdit && !window.canEdit()) {
+    alert("⚠️ ليس لديك صلاحية التعديل");
+    return;
+  }
+  if (!editingId && window.canAdd && !window.canAdd()) {
+    alert("⚠️ ليس لديك صلاحية الإضافة");
+    return;
+  }
+
   const data = {
     name: document.getElementById("sName").value.trim(),
     location: document.getElementById("sLocation").value.trim(),
@@ -163,6 +184,10 @@ window.saveShelter = async function(e) {
 
 // ====== حذف ======
 window.deleteShelter = async function(id, name) {
+  if (window.canDelete && !window.canDelete()) {
+    alert("⚠️ ليس لديك صلاحية الحذف");
+    return;
+  }
   if (!confirm(`هل تريد حذف "${name}"؟`)) return;
   try {
     await deleteDoc(doc(db, "shelters", id));
@@ -176,6 +201,11 @@ window.deleteShelter = async function(id, name) {
 
 // ====== البحث ======
 document.getElementById("searchInput")?.addEventListener("input", renderShelters);
+
+// ====== إعادة الرسم عند تغيّر الدور ======
+window.addEventListener("roleReady", () => {
+  renderShelters();
+});
 
 // ====== تشغيل ======
 loadShelters();
