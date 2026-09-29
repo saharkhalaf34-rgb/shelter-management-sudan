@@ -1,22 +1,12 @@
-// Families Page with CRUD
-import { db, auth } from "./firebase.js";
+// Families Page with CRUD + Role-Based Permissions
+import { db } from "./firebase.js";
 import { 
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 let allFamilies = [];
 let allShelters = [];
 let editingId = null;
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    const n = document.getElementById("userName");
-    const a = document.getElementById("avatar");
-    if (n) n.textContent = user.email.split("@")[0];
-    if (a) a.textContent = user.email.charAt(0).toUpperCase();
-  }
-});
 
 // ====== تحميل البيانات ======
 async function loadAll() {
@@ -66,19 +56,32 @@ function renderFamilies() {
     return;
   }
 
-  tbody.innerHTML = filtered.map((f, i) => `
-    <tr>
-      <td>${i + 1}</td>
-      <td><b>${f.headName || "—"}</b></td>
-      <td>${f.membersCount || 0} أفراد</td>
-      <td>${f.shelterName || "—"}</td>
-      <td>${f.phone || "—"}</td>
-      <td>
-        <button class="btn btn-outline btn-sm" onclick="editFamily('${f.id}')">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteFamily('${f.id}', '${f.headName}')">🗑️</button>
-      </td>
-    </tr>
-  `).join("");
+  const canEdit = window.canEdit ? window.canEdit() : false;
+  const canDelete = window.canDelete ? window.canDelete() : false;
+
+  tbody.innerHTML = filtered.map((f, i) => {
+    let actions = "";
+    if (canEdit) {
+      actions += `<button class="btn btn-outline btn-sm" onclick="editFamily('${f.id}')">✏️</button> `;
+    }
+    if (canDelete) {
+      actions += `<button class="btn btn-danger btn-sm" onclick="deleteFamily('${f.id}', '${f.headName}')">🗑️</button>`;
+    }
+    if (!actions) {
+      actions = `<span style="color:#999; font-size:12px;">👁️ عرض فقط</span>`;
+    }
+
+    return `
+      <tr>
+        <td>${i + 1}</td>
+        <td><b>${f.headName || "—"}</b></td>
+        <td>${f.membersCount || 0} أفراد</td>
+        <td>${f.shelterName || "—"}</td>
+        <td>${f.phone || "—"}</td>
+        <td>${actions}</td>
+      </tr>
+    `;
+  }).join("");
 }
 
 // ====== الإحصائيات ======
@@ -97,6 +100,10 @@ function updateStats() {
 
 // ====== نافذة الإضافة/التعديل ======
 window.openModal = function() {
+  if (window.canAdd && !window.canAdd()) {
+    alert("⚠️ ليس لديك صلاحية الإضافة");
+    return;
+  }
   editingId = null;
   document.getElementById("modalTitle").textContent = "➕ إضافة أسرة جديدة";
   document.getElementById("familyForm").reset();
@@ -108,6 +115,10 @@ window.closeModal = function() {
 };
 
 window.editFamily = function(id) {
+  if (window.canEdit && !window.canEdit()) {
+    alert("⚠️ ليس لديك صلاحية التعديل");
+    return;
+  }
   const f = allFamilies.find(x => x.id === id);
   if (!f) return;
   editingId = id;
@@ -122,6 +133,16 @@ window.editFamily = function(id) {
 // ====== حفظ ======
 window.saveFamily = async function(e) {
   e.preventDefault();
+
+  if (editingId && window.canEdit && !window.canEdit()) {
+    alert("⚠️ ليس لديك صلاحية التعديل");
+    return;
+  }
+  if (!editingId && window.canAdd && !window.canAdd()) {
+    alert("⚠️ ليس لديك صلاحية الإضافة");
+    return;
+  }
+
   const data = {
     headName: document.getElementById("fHead").value.trim(),
     membersCount: Number(document.getElementById("fMembers").value) || 0,
@@ -152,6 +173,10 @@ window.saveFamily = async function(e) {
 
 // ====== حذف ======
 window.deleteFamily = async function(id, name) {
+  if (window.canDelete && !window.canDelete()) {
+    alert("⚠️ ليس لديك صلاحية الحذف");
+    return;
+  }
   if (!confirm(`هل تريد حذف أسرة "${name}"؟`)) return;
   try {
     await deleteDoc(doc(db, "families", id));
@@ -165,4 +190,10 @@ window.deleteFamily = async function(id, name) {
 
 document.getElementById("searchInput")?.addEventListener("input", renderFamilies);
 
+// ====== إعادة الرسم عند تغيّر الدور ======
+window.addEventListener("roleReady", () => {
+  renderFamilies();
+});
+
+// ====== تشغيل ======
 loadAll();
