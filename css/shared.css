@@ -444,4 +444,39 @@ tbody tr:last-child td { border-bottom: none; }
   .btn { padding: 10px 16px; font-size: 14px; }
   .modal-footer { flex-direction: column; }
   .modal-footer .btn { width: 100%; justify-content: center; }
-                  }
+}
+
+/* ==================== إعدادات الطباعة (Print) ==================== */
+@media print {
+  /* إخفاء الشريط الجانبي والأزرار */
+  .sidebar, .menu-toggle, .btn, .user-info, .logout-btn, .search-bar {
+    display: none !important;
+  }
+
+  /* توسيع المحتوى ليملأ الصفحة */
+  .main-content {
+    margin-right: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* تحسين الألوان والخلفيات */
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* منع تقطيع البطاقات بين صفحتين */
+  .card, .report-box, .chart-card, .stat-card {
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+
+  .topbar {
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+}
