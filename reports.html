@@ -80,6 +80,29 @@
   .bar-fill.gold { background: linear-gradient(90deg, var(--gold), #e0b930); }
   .bar-fill.red { background: linear-gradient(90deg, var(--red), #f0334e); }
   .bar-fill.green { background: linear-gradient(90deg, var(--green), #00a03a); }
+
+  /* ===== إعدادات الطباعة ===== */
+  @media print {
+    .sidebar, .menu-toggle, .btn-print, .user-info, .logout-btn {
+      display: none !important;
+    }
+    .main-content {
+      margin-right: 0 !important;
+      width: 100% !important;
+      padding: 0 !important;
+    }
+    body {
+      background: #fff !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .report-box, .chart-card {
+      page-break-inside: avoid;
+      box-shadow: none !important;
+      border: 1px solid #ddd !important;
+    }
+    .topbar { border-bottom: 2px solid #000; padding-bottom: 10px; }
+  }
 </style>
 </head>
 <body>
@@ -108,9 +131,11 @@
   <main class="main-content">
 
     <div class="topbar">
-      <div style="display:flex; align-items:center;">
+      <div style="display:flex; align-items:center; gap: 15px; flex-wrap: wrap;">
         <button class="menu-toggle" onclick="toggleMenu()">☰</button>
         <h1>📈 التقارير والإحصائيات</h1>
+        <!-- زرار الطباعة هنا -->
+        <button class="btn btn-primary btn-print" onclick="window.print()" style="margin-top: 5px;">🖨️ طباعة التقرير (PDF)</button>
       </div>
       <div class="user-info">
         <div class="user-avatar" id="avatar">م</div>
